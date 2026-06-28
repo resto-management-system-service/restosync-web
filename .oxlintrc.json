@@ -29,8 +29,10 @@
     "react/no-unknown-property": "off",
     "react/jsx-no-target-blank": "off",
     "react/no-children-prop": "off",
+    "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
+    "unicorn/consistent-function-scoping": "off",
 
     "no-shadow": "off",
     "import/no-anonymous-default-export": "warn",
@@ -42,6 +44,7 @@
     "jsx-a11y/aria-unsupported-elements": "warn",
     "jsx-a11y/role-has-required-aria-props": "warn",
     "jsx-a11y/role-supports-aria-props": "warn",
+    "jsx-a11y/no-noninteractive-element-interactions": "off",
     "jsx-a11y/prefer-tag-over-role": "off"
   },
   "overrides": [

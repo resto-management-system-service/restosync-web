@@ -8,6 +8,21 @@ import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 
+function CalendarChevron({
+  orientation,
+  ...props
+}: {
+  orientation?: 'left' | 'right' | 'up' | 'down';
+  className?: string;
+  disabled?: boolean;
+  size?: number;
+}) {
+  if (orientation === 'left') {
+    return <ChevronLeftIcon className='size-4' {...props} />;
+  }
+  return <ChevronRightIcon className='size-4' {...props} />;
+}
+
 function Calendar({
   className,
   classNames,
@@ -55,12 +70,7 @@ function Calendar({
         ...classNames
       }}
       components={{
-        Chevron: ({ orientation }) => {
-          if (orientation === 'left') {
-            return <ChevronLeftIcon className='size-4' />;
-          }
-          return <ChevronRightIcon className='size-4' />;
-        }
+        Chevron: CalendarChevron
       }}
       {...props}
     />

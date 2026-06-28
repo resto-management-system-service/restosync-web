@@ -33,6 +33,7 @@ export default function MenuItemForm({
     onSubmit: ({ value }) => {
       // No backend yet — log the validated payload and toast.
       // Wire this to a mutation (see features/products/api) when the API is ready.
+      // eslint-disable-next-line no-console
       console.log('Menu item submitted:', value);
       toast.success(isEdit ? 'Menu item updated' : 'Menu item created', {
         description: `${value.name} — $${value.price?.toFixed(2)}`
