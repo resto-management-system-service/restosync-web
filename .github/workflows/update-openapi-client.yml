@@ -1,0 +1,64 @@
+name: Update OpenAPI Client
+
+# Triggered by the API repo (repository_dispatch) when the OpenAPI contract
+# changes, or manually. Pulls the latest published spec, regenerates the typed
+# client, and opens/updates a single rolling PR (chore/update-openapi).
+on:
+  repository_dispatch:
+    types: [update-openapi-client]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-openapi-client
+  cancel-in-progress: true
+
+jobs:
+  update-client:
+    name: Regenerate client & open PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull latest published OpenAPI spec
+        run: curl -fsS https://restosync-api-docs.iznomag.workers.dev/openapi.json -o src/api-client/openapi.json
+
+      - name: Regenerate typed client
+        run: pnpm generate:api
+
+      - name: Open or update the API client PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
+          branch: chore/update-openapi
+          delete-branch: true
+          commit-message: 'chore(api-client): sync generated client with OpenAPI spec'
+          title: 'chore(api-client): update OpenAPI client'
+          body: |
+            Automated update of the typed API client generated from the backend
+            OpenAPI contract (`restosync-api`).
+
+            - Refreshes `src/api-client/openapi.json` from the published spec
+            - Regenerates `src/api-client/generated` via `pnpm generate:api`
+
+            Triggered by `repository_dispatch: update-openapi-client`. This is a
+            rolling PR: it updates in place on each contract change.
+          labels: |
+            automated
+            api-client
