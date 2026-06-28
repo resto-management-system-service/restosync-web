@@ -8,9 +8,7 @@ import {
   menuItemsControllerRemove,
   categoriesControllerFindAll,
   type CreateMenuItemDto,
-  type UpdateMenuItemDto,
-  type CreateCategoryDto,
-  type UpdateCategoryDto
+  type UpdateMenuItemDto
 } from '@/api-client';
 import type { MenuItem, Category, MenuItemFilters } from './types';
 
