@@ -20,6 +20,10 @@ jobs:
   update-client:
     name: Regenerate client & open PR
     runs-on: ubuntu-latest
+    # Skip husky/lint-staged: the bot's commit must not run local dev hooks
+    # (lint-staged feeds oxfmt-ignored generated files to oxfmt, which errors).
+    env:
+      HUSKY: '0'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
