@@ -18,16 +18,19 @@ Bootstrapped from the [`next-shadcn-dashboard-starter`](https://github.com/Kiran
 
 ## Prerequisites
 
-- **Node 22** (`.nvmrc` pins `22`)
+- **Node 22** — `.nvmrc` pins `22`. If you use **asdf**, run `ASDF_NODEJS_VERSION=22 pnpm dev` or set it in your shell before running any commands.
 - **pnpm 9** — enable via Corepack: `corepack enable`
+- **restosync-api running** — the API must be up on `http://localhost:3000/api`. See the [API repo](../restosync-api/README.md) to start it.
 
 ## Getting started
 
 ```bash
 pnpm install
-cp env.example.txt .env.local   # already present in this repo
-pnpm dev                        # http://localhost:3000
+cp env.example.txt .env.local   # fill in Clerk keys or leave empty for keyless mode
+PORT=3001 pnpm dev              # http://localhost:3001
 ```
+
+> **Port note:** the API runs on `localhost:3000`, so the web dev server must use a different port (e.g. `3001`). `NEXT_PUBLIC_API_URL` in `.env.local` already points to `http://localhost:3000/api`.
 
 ### Environment variables (`.env.local`)
 
