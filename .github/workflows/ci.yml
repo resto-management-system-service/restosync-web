@@ -29,6 +29,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify API client matches committed OpenAPI spec
+        run: |
+          pnpm generate:api
+          git diff --exit-code -- src/api-client/generated \
+            || { echo "::error::Generated API client is out of sync. Run 'pnpm generate:api' and commit."; exit 1; }
+
       - name: Check Formatting
         run: pnpm format:check
 

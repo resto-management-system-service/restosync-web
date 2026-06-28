@@ -11,6 +11,7 @@
     "lint:strict": "oxlint --deny-warnings",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
+    "generate:api": "openapi-ts",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
@@ -20,6 +21,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@hey-api/client-fetch": "^0.13.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
@@ -90,6 +92,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.9.0",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@types/node": "22.10.2",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
