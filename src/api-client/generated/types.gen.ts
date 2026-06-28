@@ -9,6 +9,7 @@ export type RegisterDto = {
     password: string;
     firstName?: string;
     lastName?: string;
+    phone?: string;
 };
 
 export type LoginDto = {
