@@ -3,41 +3,72 @@
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { menuItemSchema, type MenuItemFormValues } from '@/features/menu/schemas/menu-item';
-import { menuCategoryOptions } from '@/features/menu/constants/menu-options';
+import { categoriesQueryOptions } from '../api/queries';
+import { createMenuItemMutation, updateMenuItemMutation } from '../api/mutations';
+import { currencyOptions } from '../constants/menu-options';
+import {
+  menuItemFormSchema,
+  toCreateMenuItemDto,
+  toUpdateMenuItemDto,
+  type MenuItemFormValues
+} from '../schemas/menu-item';
+
+const EMPTY: MenuItemFormValues = {
+  name: '',
+  description: '',
+  priceDollars: undefined as unknown as number,
+  currency: 'USD',
+  imageUrl: '',
+  available: true,
+  categoryId: ''
+};
 
 export default function MenuItemForm({
-  initialData,
+  menuItemId,
+  initialValues,
   pageTitle
 }: {
-  initialData?: Partial<MenuItemFormValues> | null;
+  menuItemId?: string;
+  initialValues?: MenuItemFormValues;
   pageTitle: string;
 }) {
   const router = useRouter();
-  const isEdit = !!initialData;
+  const isEdit = !!menuItemId;
+
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
+
+  const createMutation = useMutation({
+    ...createMenuItemMutation,
+    onSuccess: () => {
+      toast.success('Menu item created');
+      router.push('/dashboard/menu');
+    },
+    onError: () => toast.error('Failed to create menu item')
+  });
+
+  const updateMutation = useMutation({
+    ...updateMenuItemMutation,
+    onSuccess: () => {
+      toast.success('Menu item updated');
+      router.push('/dashboard/menu');
+    },
+    onError: () => toast.error('Failed to update menu item')
+  });
 
   const form = useAppForm({
-    defaultValues: {
-      name: initialData?.name ?? '',
-      category: initialData?.category ?? '',
-      price: initialData?.price,
-      description: initialData?.description ?? '',
-      available: initialData?.available ?? true
-    } as MenuItemFormValues,
-    validators: {
-      onSubmit: menuItemSchema
-    },
+    defaultValues: initialValues ?? EMPTY,
+    validators: { onSubmit: menuItemFormSchema },
     onSubmit: ({ value }) => {
-      // No backend yet — log the validated payload and toast.
-      // Wire this to a mutation (see features/products/api) when the API is ready.
-      // eslint-disable-next-line no-console
-      console.log('Menu item submitted:', value);
-      toast.success(isEdit ? 'Menu item updated' : 'Menu item created', {
-        description: `${value.name} — $${value.price?.toFixed(2)}`
-      });
+      if (isEdit && menuItemId) {
+        updateMutation.mutate({ id: menuItemId, values: toUpdateMenuItemDto(value) });
+      } else {
+        createMutation.mutate(toCreateMenuItemDto(value));
+      }
     }
   });
 
@@ -64,42 +95,45 @@ export default function MenuItemForm({
               />
 
               <FormSelectField
-                name='category'
+                name='categoryId'
                 label='Category'
                 required
-                options={menuCategoryOptions}
+                options={categoryOptions}
                 placeholder='Select category'
-                validators={{
-                  onBlur: z.string().min(1, 'Please select a category.')
-                }}
               />
 
               <FormTextField
-                name='price'
+                name='priceDollars'
                 label='Price'
                 required
                 type='number'
                 min={0}
                 step={0.01}
-                placeholder='Enter price'
+                placeholder='0.00'
                 validators={{
                   onBlur: z
                     .number({ message: 'Price is required.' })
                     .positive('Price must be greater than 0.')
                 }}
               />
+
+              <FormSelectField
+                name='currency'
+                label='Currency'
+                required
+                options={currencyOptions}
+                placeholder='Select currency'
+              />
+
+              <FormTextField name='imageUrl' label='Image URL' placeholder='https://…' />
             </div>
 
             <FormTextareaField
               name='description'
               label='Description'
-              required
               placeholder='Describe the dish, ingredients, etc.'
               maxLength={500}
               rows={4}
-              validators={{
-                onBlur: z.string().min(10, 'Description must be at least 10 characters.')
-              }}
             />
 
             <FormSwitchField
