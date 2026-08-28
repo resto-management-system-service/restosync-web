@@ -1,15 +1,12 @@
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { getQueryClient } from '@/lib/query-client';
-import { categoriesQueryOptions } from '../api/queries';
+import { Suspense } from 'react';
+import { DataTableSkeleton } from '@/components/ui/table/data-table-skeleton';
 import { CategoryTable } from './category-tables';
 
+// Client-fetched — see the note in menu-item-listing.tsx.
 export default function CategoryListing() {
-  const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(categoriesQueryOptions());
-
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <Suspense fallback={<DataTableSkeleton columnCount={4} />}>
       <CategoryTable />
-    </HydrationBoundary>
+    </Suspense>
   );
 }

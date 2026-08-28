@@ -1,7 +1,6 @@
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { getQueryClient } from '@/lib/query-client';
+import { Suspense } from 'react';
 import PageContainer from '@/components/layout/page-container';
-import { categoryByIdOptions } from '@/features/menu/api/queries';
+import FormCardSkeleton from '@/components/form-card-skeleton';
 import CategoryViewPage from '@/features/menu/components/category-view-page';
 
 export const metadata = {
@@ -10,18 +9,13 @@ export const metadata = {
 
 export default async function Page(props: { params: Promise<{ categoryId: string }> }) {
   const { categoryId } = await props.params;
-  const queryClient = getQueryClient();
-
-  if (categoryId !== 'new') {
-    void queryClient.prefetchQuery(categoryByIdOptions(categoryId));
-  }
 
   return (
     <PageContainer>
       <div className='flex-1 space-y-4'>
-        <HydrationBoundary state={dehydrate(queryClient)}>
+        <Suspense fallback={<FormCardSkeleton />}>
           <CategoryViewPage categoryId={categoryId} />
-        </HydrationBoundary>
+        </Suspense>
       </div>
     </PageContainer>
   );

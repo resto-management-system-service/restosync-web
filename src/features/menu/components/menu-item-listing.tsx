@@ -1,26 +1,14 @@
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { getQueryClient } from '@/lib/query-client';
-import { searchParamsCache } from '@/lib/searchparams';
-import { categoriesQueryOptions, menuItemsQueryOptions } from '../api/queries';
-import type { MenuItemFilters } from '../api/types';
+import { Suspense } from 'react';
+import { DataTableSkeleton } from '@/components/ui/table/data-table-skeleton';
 import { MenuItemTable } from './menu-item-tables';
 
+// Data is fetched on the client: the MSW mock backend runs in the browser only,
+// so create/update/delete stay consistent with what the list shows. Swap back to
+// server prefetch + HydrationBoundary once the real API is live.
 export default function MenuItemListing() {
-  const categoryId = searchParamsCache.get('categoryId');
-  const available = searchParamsCache.get('available');
-
-  const filters: MenuItemFilters = {
-    ...(categoryId ? { categoryId } : {}),
-    ...(available ? { available: available === 'true' } : {})
-  };
-
-  const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(categoriesQueryOptions());
-  void queryClient.prefetchQuery(menuItemsQueryOptions(filters));
-
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <Suspense fallback={<DataTableSkeleton columnCount={5} filterCount={1} />}>
       <MenuItemTable />
-    </HydrationBoundary>
+    </Suspense>
   );
 }

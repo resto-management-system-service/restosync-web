@@ -5,9 +5,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useOrganization, Show } from '@clerk/nextjs';
 import { Icons } from '@/components/icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AuthDisabledNotice } from '@/components/auth/auth-disabled-notice';
+import { AUTH_DISABLED } from '@/lib/auth';
 import Link from 'next/link';
 
 export default function ExclusivePage() {
+  if (AUTH_DISABLED) {
+    return (
+      <PageContainer>
+        <AuthDisabledNotice feature='The exclusive area' />
+      </PageContainer>
+    );
+  }
+  return <ExclusivePageInner />;
+}
+
+function ExclusivePageInner() {
   const { organization, isLoaded } = useOrganization();
 
   return (

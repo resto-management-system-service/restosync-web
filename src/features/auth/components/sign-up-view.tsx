@@ -1,6 +1,7 @@
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SignUp as ClerkSignUpForm } from '@clerk/nextjs';
+import { AUTH_DISABLED } from '@/lib/auth';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { Icons } from '@/components/icons';
 import { Metadata } from 'next';
@@ -77,11 +78,17 @@ export default function SignUpViewPage({ stars }: { stars: number }) {
               <span className='font-display font-medium'>{stars}</span>
             </div>
           </Link>
-          <ClerkSignUpForm
-            initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
-            }}
-          />
+          {AUTH_DISABLED ? (
+            <Link href='/dashboard/overview' className={cn(buttonVariants(), 'w-full')}>
+              Continue to dashboard (auth disabled)
+            </Link>
+          ) : (
+            <ClerkSignUpForm
+              initialValues={{
+                emailAddress: 'your_mail+clerk_test@example.com'
+              }}
+            />
+          )}
           <div className='text-muted-foreground space-y-2 px-8 text-center text-xs'>
             <p>
               This is an{' '}

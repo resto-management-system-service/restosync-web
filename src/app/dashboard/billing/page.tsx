@@ -6,9 +6,22 @@ import { useOrganization } from '@clerk/nextjs';
 import { PricingTable } from '@clerk/nextjs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Icons } from '@/components/icons';
+import { AuthDisabledNotice } from '@/components/auth/auth-disabled-notice';
+import { AUTH_DISABLED } from '@/lib/auth';
 import { billingInfoContent } from '@/config/infoconfig';
 
 export default function BillingPage() {
+  if (AUTH_DISABLED) {
+    return (
+      <PageContainer pageTitle='Billing & Plans'>
+        <AuthDisabledNotice feature='Billing' />
+      </PageContainer>
+    );
+  }
+  return <BillingPageInner />;
+}
+
+function BillingPageInner() {
   const { organization, isLoaded } = useOrganization();
 
   return (

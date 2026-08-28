@@ -27,10 +27,10 @@ import {
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navGroups } from '@/config/nav-config';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { useOrganization } from '@clerk/nextjs';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { SignOutButton } from '@clerk/nextjs';
+import { useCurrentOrg } from '@/hooks/use-current-org';
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -41,7 +41,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
   const user = useCurrentUser();
-  const { organization } = useOrganization();
+  const { organization } = useCurrentOrg();
   const router = useRouter();
   const filteredGroups = useFilteredNavGroups(navGroups);
 
