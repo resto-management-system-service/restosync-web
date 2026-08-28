@@ -17,7 +17,8 @@
  */
 
 import { useMemo } from 'react';
-import { useOrganization, useUser } from '@clerk/nextjs';
+import { useOrganization } from '@clerk/nextjs';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import type { NavItem, NavGroup } from '@/types';
 
 /**
@@ -28,7 +29,7 @@ import type { NavItem, NavGroup } from '@/types';
  */
 export function useFilteredNavItems(items: NavItem[]) {
   const { organization, membership } = useOrganization();
-  const { user } = useUser();
+  const user = useCurrentUser();
 
   // Memoize context and permissions
   const accessContext = useMemo(() => {

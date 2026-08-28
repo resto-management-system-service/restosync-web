@@ -1,9 +1,11 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextRequest } from 'next/server';
+import { AUTH_DISABLED } from '@/lib/auth';
 
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
+  if (AUTH_DISABLED) return;
   if (isProtectedRoute(req)) await auth.protect();
 });
 export const config = {
