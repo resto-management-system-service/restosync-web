@@ -50,19 +50,55 @@ export const zUpdateMenuItemDto = z.object({
     categoryId: z.uuid().optional()
 });
 
+export const zCreateModifierDto = z.object({
+    name: z.string(),
+    priceDeltaCents: z.number().optional().default(0),
+    sortOrder: z.number().optional().default(0),
+    available: z.boolean().optional().default(true)
+});
+
+export const zCreateModifierGroupDto = z.object({
+    name: z.string(),
+    required: z.boolean().optional().default(false),
+    minSelect: z.number().optional().default(0),
+    maxSelect: z.number().optional().default(1),
+    sortOrder: z.number().optional().default(0),
+    modifiers: z.array(zCreateModifierDto).optional()
+});
+
+export const zUpdateModifierGroupDto = z.object({
+    name: z.string().optional(),
+    required: z.boolean().optional().default(false),
+    minSelect: z.number().optional().default(0),
+    maxSelect: z.number().optional().default(1),
+    sortOrder: z.number().optional().default(0),
+    modifiers: z.array(zCreateModifierDto).optional()
+});
+
+export const zUpdateModifierDto = z.object({
+    name: z.string().optional(),
+    priceDeltaCents: z.number().optional().default(0),
+    sortOrder: z.number().optional().default(0),
+    available: z.boolean().optional().default(true)
+});
+
 export const zOrderLineDto = z.object({
     menuItemId: z.uuid(),
     quantity: z.number().gte(1),
-    modifiers: z.record(z.string(), z.unknown()).optional()
+    modifierIds: z.array(z.string()).optional(),
+    notes: z.string().optional()
 });
 
 export const zCreateOrderDto = z.object({
+    type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
+    tableId: z.uuid().optional(),
     items: z.array(zOrderLineDto),
     notes: z.string().optional()
 });
 
 export const zUpdateOrderStatusDto = z.object({
     status: z.enum([
+        'DRAFT',
         'PENDING',
         'CONFIRMED',
         'PREPARING',
@@ -72,8 +108,105 @@ export const zUpdateOrderStatusDto = z.object({
     ])
 });
 
+export const zAddOrderItemDto = z.object({
+    menuItemId: z.uuid(),
+    quantity: z.number().gte(1),
+    modifierIds: z.array(z.string()).optional(),
+    notes: z.string().optional()
+});
+
+export const zUpdateOrderItemDto = z.object({
+    quantity: z.number().gte(1),
+    notes: z.string().optional()
+});
+
+export const zApplyDiscountDto = z.object({
+    discountType: z.enum(['FIXED', 'PERCENTAGE']),
+    discountCents: z.number().optional(),
+    discountPercent: z.number().optional(),
+    reason: z.string().optional()
+});
+
 export const zCreateIntentDto = z.object({
     orderId: z.uuid()
+});
+
+export const zCheckoutDto = z.object({
+    orderId: z.uuid(),
+    method: z.enum([
+        'CASH',
+        'CARD',
+        'TRANSFER',
+        'STRIPE'
+    ]),
+    amountPaidCents: z.number(),
+    notes: z.string().optional()
+});
+
+export const zCreateInventoryItemDto = z.object({
+    name: z.string(),
+    unit: z.string().optional().default('unit'),
+    quantityOnHand: z.number().optional().default(0),
+    lowStockThreshold: z.number().optional().default(0),
+    menuItemId: z.uuid().optional()
+});
+
+export const zAdjustStockDto = z.object({
+    type: z.enum([
+        'RESTOCK',
+        'SALE',
+        'WASTE',
+        'CORRECTION'
+    ]),
+    quantityDelta: z.number(),
+    reason: z.string().optional()
+});
+
+export const zOpenSessionDto = z.object({
+    openingFloatCents: z.number(),
+    notes: z.string().optional()
+});
+
+export const zCloseSessionDto = z.object({
+    countedCents: z.number(),
+    notes: z.string().optional()
+});
+
+export const zCreateTableDto = z.object({
+    name: z.string(),
+    capacity: z.number().optional()
+});
+
+export const zUpdateTableDto = z.object({
+    name: z.string().optional(),
+    capacity: z.number().optional()
+});
+
+export const zCreateReservationDto = z.object({
+    customerName: z.string(),
+    customerPhone: z.string(),
+    customerEmail: z.string().optional(),
+    partySize: z.number().gte(1),
+    reservedFor: z.string(),
+    toleranceMinutes: z.number().optional(),
+    allergies: z.string().optional(),
+    specialOccasion: z.string().optional(),
+    reservationType: z.enum([
+        'WITH_PREORDER',
+        'DEPOSIT_ONLY',
+        'INFORMAL'
+    ]),
+    tableId: z.uuid().optional(),
+    items: z.array(zOrderLineDto).optional()
+});
+
+export const zSeatReservationDto = z.object({
+    tableId: z.uuid().optional()
+});
+
+export const zCreateRestaurantDto = z.object({
+    name: z.string(),
+    timezone: z.string().optional().default('America/Lima')
 });
 
 export const zAuthControllerRegisterBody = zRegisterDto;
@@ -105,6 +238,7 @@ export const zCategoriesControllerUpdatePath = z.object({
 });
 
 export const zMenuItemsControllerFindAllQuery = z.object({
+    name: z.string().optional(),
     categoryId: z.uuid().optional(),
     available: z.boolean().optional()
 });
@@ -125,6 +259,46 @@ export const zMenuItemsControllerUpdatePath = z.object({
     id: z.string()
 });
 
+export const zMenuItemsControllerDeactivatePath = z.object({
+    id: z.string()
+});
+
+export const zModifiersControllerListForItemPath = z.object({
+    itemId: z.string()
+});
+
+export const zModifiersControllerCreateGroupBody = zCreateModifierGroupDto;
+
+export const zModifiersControllerCreateGroupPath = z.object({
+    itemId: z.string()
+});
+
+export const zModifiersControllerRemoveGroupPath = z.object({
+    groupId: z.string()
+});
+
+export const zModifiersControllerUpdateGroupBody = zUpdateModifierGroupDto;
+
+export const zModifiersControllerUpdateGroupPath = z.object({
+    groupId: z.string()
+});
+
+export const zModifiersControllerAddModifierBody = zCreateModifierDto;
+
+export const zModifiersControllerAddModifierPath = z.object({
+    groupId: z.string()
+});
+
+export const zModifiersControllerRemoveModifierPath = z.object({
+    modifierId: z.string()
+});
+
+export const zModifiersControllerUpdateModifierBody = zUpdateModifierDto;
+
+export const zModifiersControllerUpdateModifierPath = z.object({
+    modifierId: z.string()
+});
+
 export const zOrdersControllerCreateBody = zCreateOrderDto;
 
 export const zOrdersControllerFindOnePath = z.object({
@@ -137,4 +311,161 @@ export const zOrdersControllerUpdateStatusPath = z.object({
     id: z.string()
 });
 
+export const zOrdersControllerAddItemBody = zAddOrderItemDto;
+
+export const zOrdersControllerAddItemPath = z.object({
+    id: z.string()
+});
+
+export const zOrdersControllerRemoveItemPath = z.object({
+    id: z.string(),
+    itemId: z.string()
+});
+
+export const zOrdersControllerUpdateItemQuantityBody = zUpdateOrderItemDto;
+
+export const zOrdersControllerUpdateItemQuantityPath = z.object({
+    id: z.string(),
+    itemId: z.string()
+});
+
+export const zOrdersControllerConfirmOrderPath = z.object({
+    id: z.string()
+});
+
+export const zOrdersControllerApplyDiscountBody = zApplyDiscountDto;
+
+export const zOrdersControllerApplyDiscountPath = z.object({
+    id: z.string()
+});
+
+export const zOrdersControllerGetAuditLogPath = z.object({
+    id: z.string()
+});
+
 export const zPaymentsControllerCreateIntentBody = zCreateIntentDto;
+
+export const zPaymentsControllerCheckoutBody = zCheckoutDto;
+
+export const zInventoryControllerCreateBody = zCreateInventoryItemDto;
+
+export const zInventoryControllerRemovePath = z.object({
+    id: z.string()
+});
+
+export const zInventoryControllerFindOnePath = z.object({
+    id: z.string()
+});
+
+export const zInventoryControllerUpdatePath = z.object({
+    id: z.string()
+});
+
+export const zInventoryControllerAdjustBody = zAdjustStockDto;
+
+export const zInventoryControllerAdjustPath = z.object({
+    id: z.string()
+});
+
+export const zCashRegisterControllerOpenSessionBody = zOpenSessionDto;
+
+export const zCashRegisterControllerCloseSessionBody = zCloseSessionDto;
+
+export const zCashRegisterControllerGetSessionSummaryPath = z.object({
+    id: z.string()
+});
+
+export const zReportsControllerGetDailySummaryQuery = z.object({
+    date: z.string(),
+    limit: z.number().optional(),
+    format: z.enum(['json', 'csv']).optional().default('json')
+});
+
+export const zReportsControllerGetPaymentMethodBreakdownQuery = z.object({
+    date: z.string(),
+    limit: z.number().optional(),
+    format: z.enum(['json', 'csv']).optional().default('json')
+});
+
+export const zReportsControllerGetBestSellingProductsQuery = z.object({
+    date: z.string(),
+    limit: z.number().optional(),
+    format: z.enum(['json', 'csv']).optional().default('json')
+});
+
+export const zReportsControllerGetClosedTicketsQuery = z.object({
+    startDate: z.string(),
+    endDate: z.string(),
+    format: z.enum(['json', 'csv']).optional().default('json')
+});
+
+export const zReportsControllerGetDailySummaryRangeQuery = z.object({
+    startDate: z.string(),
+    endDate: z.string(),
+    format: z.enum(['json', 'csv']).optional().default('json')
+});
+
+export const zReportsControllerGetPaymentMethodBreakdownRangeQuery = z.object({
+    startDate: z.string(),
+    endDate: z.string(),
+    format: z.enum(['json', 'csv']).optional().default('json')
+});
+
+export const zReportsControllerGetTicketCountByDayQuery = z.object({
+    startDate: z.string(),
+    endDate: z.string(),
+    format: z.enum(['json', 'csv']).optional().default('json')
+});
+
+export const zTablesControllerCreateBody = zCreateTableDto;
+
+export const zTablesControllerRemovePath = z.object({
+    id: z.string()
+});
+
+export const zTablesControllerFindOnePath = z.object({
+    id: z.string()
+});
+
+export const zTablesControllerUpdateBody = zUpdateTableDto;
+
+export const zTablesControllerUpdatePath = z.object({
+    id: z.string()
+});
+
+export const zReservationsControllerFindAllQuery = z.object({
+    status: z.enum([
+        'PENDING',
+        'CONFIRMED',
+        'SEATED',
+        'NO_SHOW',
+        'CANCELLED'
+    ]).optional(),
+    date: z.string().optional()
+});
+
+export const zReservationsControllerCreateBody = zCreateReservationDto;
+
+export const zReservationsControllerFindOnePath = z.object({
+    id: z.string()
+});
+
+export const zReservationsControllerConfirmPath = z.object({
+    id: z.string()
+});
+
+export const zReservationsControllerSeatBody = zSeatReservationDto;
+
+export const zReservationsControllerSeatPath = z.object({
+    id: z.string()
+});
+
+export const zReservationsControllerNoShowPath = z.object({
+    id: z.string()
+});
+
+export const zReservationsControllerCancelPath = z.object({
+    id: z.string()
+});
+
+export const zRestaurantsControllerCreateBody = zCreateRestaurantDto;

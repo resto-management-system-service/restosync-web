@@ -40,6 +40,9 @@ export type CreateMenuItemDto = {
      */
     priceCents: number;
     currency?: string;
+    /**
+     * Public URL of the product image
+     */
     imageUrl?: string;
     available?: boolean;
     categoryId: string;
@@ -53,29 +56,129 @@ export type UpdateMenuItemDto = {
      */
     priceCents?: number;
     currency?: string;
+    /**
+     * Public URL of the product image
+     */
     imageUrl?: string;
     available?: boolean;
     categoryId?: string;
+};
+
+export type CreateModifierDto = {
+    name: string;
+    /**
+     * Price change in integer cents; may be negative for removals
+     */
+    priceDeltaCents?: number;
+    sortOrder?: number;
+    available?: boolean;
+};
+
+export type CreateModifierGroupDto = {
+    name: string;
+    required?: boolean;
+    /**
+     * Minimum selections when the group is used
+     */
+    minSelect?: number;
+    /**
+     * Maximum selections allowed
+     */
+    maxSelect?: number;
+    sortOrder?: number;
+    /**
+     * Options to create with the group
+     */
+    modifiers?: Array<CreateModifierDto>;
+};
+
+export type UpdateModifierGroupDto = {
+    name?: string;
+    required?: boolean;
+    /**
+     * Minimum selections when the group is used
+     */
+    minSelect?: number;
+    /**
+     * Maximum selections allowed
+     */
+    maxSelect?: number;
+    sortOrder?: number;
+    /**
+     * Options to create with the group
+     */
+    modifiers?: Array<CreateModifierDto>;
+};
+
+export type UpdateModifierDto = {
+    name?: string;
+    /**
+     * Price change in integer cents; may be negative for removals
+     */
+    priceDeltaCents?: number;
+    sortOrder?: number;
+    available?: boolean;
 };
 
 export type OrderLineDto = {
     menuItemId: string;
     quantity: number;
     /**
-     * Free-form modifiers (e.g. { "size": "L", "extras": ["bacon"] })
+     * IDs of selected modifier options for this line
      */
-    modifiers?: {
-        [key: string]: unknown;
-    };
+    modifierIds?: Array<string>;
+    /**
+     * Kitchen instructions for this item
+     */
+    notes?: string;
 };
 
 export type CreateOrderDto = {
+    type: 'DINE_IN' | 'TAKEAWAY';
+    tableId?: string;
     items: Array<OrderLineDto>;
     notes?: string;
 };
 
 export type UpdateOrderStatusDto = {
-    status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+    status: 'DRAFT' | 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+};
+
+export type AddOrderItemDto = {
+    menuItemId: string;
+    quantity: number;
+    /**
+     * IDs of selected modifier options for this line
+     */
+    modifierIds?: Array<string>;
+    /**
+     * Kitchen instructions for this item
+     */
+    notes?: string;
+};
+
+export type UpdateOrderItemDto = {
+    quantity: number;
+    /**
+     * Kitchen instructions for this item
+     */
+    notes?: string;
+};
+
+export type ApplyDiscountDto = {
+    discountType: 'FIXED' | 'PERCENTAGE';
+    /**
+     * Required when discountType is FIXED. Amount in cents.
+     */
+    discountCents?: number;
+    /**
+     * Required when discountType is PERCENTAGE. 0-100.
+     */
+    discountPercent?: number;
+    /**
+     * Reason for the discount (audit trail)
+     */
+    reason?: string;
 };
 
 export type CreateIntentDto = {
@@ -83,6 +186,142 @@ export type CreateIntentDto = {
      * Order to pay for
      */
     orderId: string;
+};
+
+export type CheckoutDto = {
+    /**
+     * Order to check out
+     */
+    orderId: string;
+    /**
+     * Payment method used
+     */
+    method: 'CASH' | 'CARD' | 'TRANSFER' | 'STRIPE';
+    /**
+     * Amount physically received, in cents
+     */
+    amountPaidCents: number;
+    /**
+     * Optional notes for this payment
+     */
+    notes?: string;
+};
+
+export type CreateInventoryItemDto = {
+    /**
+     * Name of the inventory item
+     */
+    name: string;
+    /**
+     * Unit of measurement (unit, kg, l, etc.)
+     */
+    unit?: string;
+    /**
+     * Current quantity on hand
+     */
+    quantityOnHand?: number;
+    /**
+     * Low stock alert threshold
+     */
+    lowStockThreshold?: number;
+    /**
+     * Link to a menu item
+     */
+    menuItemId?: string;
+};
+
+export type AdjustStockDto = {
+    /**
+     * Type of stock adjustment
+     */
+    type: 'RESTOCK' | 'SALE' | 'WASTE' | 'CORRECTION';
+    /**
+     * Quantity change (positive = in, negative = out)
+     */
+    quantityDelta: number;
+    /**
+     * Reason for the adjustment
+     */
+    reason?: string;
+};
+
+export type OpenSessionDto = {
+    /**
+     * Starting float amount in cents
+     */
+    openingFloatCents: number;
+    /**
+     * Optional notes for the session
+     */
+    notes?: string;
+};
+
+export type CloseSessionDto = {
+    /**
+     * Physically counted amount in cents
+     */
+    countedCents: number;
+    /**
+     * Optional notes for the session
+     */
+    notes?: string;
+};
+
+export type CreateTableDto = {
+    /**
+     * Table name/number, must be unique
+     */
+    name: string;
+    /**
+     * Seating capacity
+     */
+    capacity?: number;
+};
+
+export type UpdateTableDto = {
+    /**
+     * Table name/number, must be unique
+     */
+    name?: string;
+    /**
+     * Seating capacity
+     */
+    capacity?: number;
+};
+
+export type CreateReservationDto = {
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    partySize: number;
+    /**
+     * Date/time the customer is expected, as the restaurant's local wall-clock time with NO timezone suffix (e.g. "2026-07-18T14:00:00") — do not include Z or an offset.
+     */
+    reservedFor: string;
+    /**
+     * Grace period in minutes before staff decides on a no-show. Defaults vary by reservationType when omitted (INFORMAL: 10, DEPOSIT_ONLY: 20, WITH_PREORDER: 30) but any explicit value is honored exactly.
+     */
+    toleranceMinutes?: number;
+    allergies?: string;
+    specialOccasion?: string;
+    reservationType: 'WITH_PREORDER' | 'DEPOSIT_ONLY' | 'INFORMAL';
+    tableId?: string;
+    items?: Array<OrderLineDto>;
+};
+
+export type SeatReservationDto = {
+    /**
+     * Required only when seating an INFORMAL reservation
+     */
+    tableId?: string;
+};
+
+export type CreateRestaurantDto = {
+    name: string;
+    /**
+     * IANA timezone used to interpret restaurant-local times
+     */
+    timezone?: string;
 };
 
 export type AppControllerHealthData = {
@@ -242,6 +481,10 @@ export type MenuItemsControllerFindAllData = {
     body?: never;
     path?: never;
     query?: {
+        /**
+         * Filter by product name (case-insensitive)
+         */
+        name?: string;
         categoryId?: string;
         /**
          * Only return available items
@@ -305,6 +548,110 @@ export type MenuItemsControllerUpdateResponses = {
     200: unknown;
 };
 
+export type MenuItemsControllerDeactivateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/menu/items/{id}/deactivate';
+};
+
+export type MenuItemsControllerDeactivateResponses = {
+    200: unknown;
+};
+
+export type ModifiersControllerListForItemData = {
+    body?: never;
+    path: {
+        itemId: string;
+    };
+    query?: never;
+    url: '/menu/items/{itemId}/modifier-groups';
+};
+
+export type ModifiersControllerListForItemResponses = {
+    200: unknown;
+};
+
+export type ModifiersControllerCreateGroupData = {
+    body: CreateModifierGroupDto;
+    path: {
+        itemId: string;
+    };
+    query?: never;
+    url: '/menu/items/{itemId}/modifier-groups';
+};
+
+export type ModifiersControllerCreateGroupResponses = {
+    201: unknown;
+};
+
+export type ModifiersControllerRemoveGroupData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/menu/modifier-groups/{groupId}';
+};
+
+export type ModifiersControllerRemoveGroupResponses = {
+    200: unknown;
+};
+
+export type ModifiersControllerUpdateGroupData = {
+    body: UpdateModifierGroupDto;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/menu/modifier-groups/{groupId}';
+};
+
+export type ModifiersControllerUpdateGroupResponses = {
+    200: unknown;
+};
+
+export type ModifiersControllerAddModifierData = {
+    body: CreateModifierDto;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/menu/modifier-groups/{groupId}/modifiers';
+};
+
+export type ModifiersControllerAddModifierResponses = {
+    201: unknown;
+};
+
+export type ModifiersControllerRemoveModifierData = {
+    body?: never;
+    path: {
+        modifierId: string;
+    };
+    query?: never;
+    url: '/menu/modifiers/{modifierId}';
+};
+
+export type ModifiersControllerRemoveModifierResponses = {
+    200: unknown;
+};
+
+export type ModifiersControllerUpdateModifierData = {
+    body: UpdateModifierDto;
+    path: {
+        modifierId: string;
+    };
+    query?: never;
+    url: '/menu/modifiers/{modifierId}';
+};
+
+export type ModifiersControllerUpdateModifierResponses = {
+    200: unknown;
+};
+
 export type OrdersControllerFindAllData = {
     body?: never;
     path?: never;
@@ -323,8 +670,43 @@ export type OrdersControllerCreateData = {
     url: '/orders';
 };
 
+export type OrdersControllerCreateErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+};
+
 export type OrdersControllerCreateResponses = {
+    /**
+     * Order created in DRAFT status
+     */
     201: unknown;
+};
+
+export type OrdersControllerFindOpenData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/orders/open';
+};
+
+export type OrdersControllerFindOpenErrors = {
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+};
+
+export type OrdersControllerFindOpenResponses = {
+    /**
+     * List of DRAFT/PENDING orders with totals
+     */
+    200: unknown;
 };
 
 export type OrdersControllerFindOneData = {
@@ -353,6 +735,186 @@ export type OrdersControllerUpdateStatusResponses = {
     200: unknown;
 };
 
+export type OrdersControllerAddItemData = {
+    body: AddOrderItemDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/orders/{id}/items';
+};
+
+export type OrdersControllerAddItemErrors = {
+    /**
+     * Order not editable or validation error
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+    /**
+     * Order or menu item not found
+     */
+    404: unknown;
+};
+
+export type OrdersControllerAddItemResponses = {
+    /**
+     * Item added with price snapshot, total recomputed
+     */
+    201: unknown;
+};
+
+export type OrdersControllerRemoveItemData = {
+    body?: never;
+    path: {
+        id: string;
+        itemId: string;
+    };
+    query?: never;
+    url: '/orders/{id}/items/{itemId}';
+};
+
+export type OrdersControllerRemoveItemErrors = {
+    /**
+     * Order not editable
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+    /**
+     * Order or item not found
+     */
+    404: unknown;
+};
+
+export type OrdersControllerRemoveItemResponses = {
+    /**
+     * Line removed, totals recomputed
+     */
+    200: unknown;
+};
+
+export type OrdersControllerUpdateItemQuantityData = {
+    body: UpdateOrderItemDto;
+    path: {
+        id: string;
+        itemId: string;
+    };
+    query?: never;
+    url: '/orders/{id}/items/{itemId}';
+};
+
+export type OrdersControllerUpdateItemQuantityErrors = {
+    /**
+     * Order not editable or validation error
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+    /**
+     * Order or item not found
+     */
+    404: unknown;
+};
+
+export type OrdersControllerUpdateItemQuantityResponses = {
+    /**
+     * Quantity updated, total recomputed
+     */
+    200: unknown;
+};
+
+export type OrdersControllerConfirmOrderData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/orders/{id}/confirm';
+};
+
+export type OrdersControllerConfirmOrderErrors = {
+    /**
+     * Order has no items or invalid transition
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+    /**
+     * Order not found
+     */
+    404: unknown;
+};
+
+export type OrdersControllerConfirmOrderResponses = {
+    /**
+     * Order closed, status PENDING
+     */
+    200: unknown;
+};
+
+export type OrdersControllerApplyDiscountData = {
+    body: ApplyDiscountDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/orders/{id}/discount';
+};
+
+export type OrdersControllerApplyDiscountErrors = {
+    /**
+     * Invalid discount, order not editable, or discount exceeds subtotal
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+    /**
+     * Order not found
+     */
+    404: unknown;
+};
+
+export type OrdersControllerApplyDiscountResponses = {
+    /**
+     * Discount applied, total recomputed, audit recorded
+     */
+    200: unknown;
+};
+
+export type OrdersControllerGetAuditLogData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/orders/{id}/audit-log';
+};
+
+export type OrdersControllerGetAuditLogErrors = {
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+};
+
+export type OrdersControllerGetAuditLogResponses = {
+    /**
+     * List of audit entries, newest first
+     */
+    200: unknown;
+};
+
 export type PaymentsControllerCreateIntentData = {
     body: CreateIntentDto;
     path?: never;
@@ -361,5 +923,756 @@ export type PaymentsControllerCreateIntentData = {
 };
 
 export type PaymentsControllerCreateIntentResponses = {
+    201: unknown;
+};
+
+export type PaymentsControllerCheckoutData = {
+    body: CheckoutDto;
+    path?: never;
+    query?: never;
+    url: '/payments/checkout';
+};
+
+export type PaymentsControllerCheckoutErrors = {
+    /**
+     * Validation error or insufficient payment
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+    /**
+     * Order not found
+     */
+    404: unknown;
+};
+
+export type PaymentsControllerCheckoutResponses = {
+    /**
+     * Payment recorded with method, amount and order link
+     */
+    201: unknown;
+};
+
+export type InventoryControllerFindAllData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/inventory';
+};
+
+export type InventoryControllerFindAllResponses = {
+    /**
+     * List of inventory items
+     */
+    200: unknown;
+};
+
+export type InventoryControllerCreateData = {
+    body: CreateInventoryItemDto;
+    path?: never;
+    query?: never;
+    url: '/inventory';
+};
+
+export type InventoryControllerCreateErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+};
+
+export type InventoryControllerCreateResponses = {
+    /**
+     * Inventory item created
+     */
+    201: unknown;
+};
+
+export type InventoryControllerFindLowStockData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/inventory/low-stock';
+};
+
+export type InventoryControllerFindLowStockResponses = {
+    /**
+     * Items where quantityOnHand <= lowStockThreshold
+     */
+    200: unknown;
+};
+
+export type InventoryControllerRemoveData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/inventory/{id}';
+};
+
+export type InventoryControllerRemoveErrors = {
+    /**
+     * Item not found
+     */
+    404: unknown;
+};
+
+export type InventoryControllerRemoveResponses = {
+    /**
+     * Inventory item deleted
+     */
+    200: unknown;
+};
+
+export type InventoryControllerFindOneData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/inventory/{id}';
+};
+
+export type InventoryControllerFindOneErrors = {
+    /**
+     * Item not found
+     */
+    404: unknown;
+};
+
+export type InventoryControllerFindOneResponses = {
+    /**
+     * Inventory item details
+     */
+    200: unknown;
+};
+
+export type InventoryControllerUpdateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/inventory/{id}';
+};
+
+export type InventoryControllerUpdateErrors = {
+    /**
+     * Item not found
+     */
+    404: unknown;
+};
+
+export type InventoryControllerUpdateResponses = {
+    /**
+     * Inventory item updated
+     */
+    200: unknown;
+};
+
+export type InventoryControllerAdjustData = {
+    body: AdjustStockDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/inventory/{id}/adjust';
+};
+
+export type InventoryControllerAdjustErrors = {
+    /**
+     * Item not found
+     */
+    404: unknown;
+};
+
+export type InventoryControllerAdjustResponses = {
+    /**
+     * Stock adjustment recorded
+     */
+    201: unknown;
+};
+
+export type CashRegisterControllerOpenSessionData = {
+    body: OpenSessionDto;
+    path?: never;
+    query?: never;
+    url: '/cash-register/open';
+};
+
+export type CashRegisterControllerOpenSessionErrors = {
+    /**
+     * Session already open
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+};
+
+export type CashRegisterControllerOpenSessionResponses = {
+    /**
+     * Session opened
+     */
+    201: unknown;
+};
+
+export type CashRegisterControllerCloseSessionData = {
+    body: CloseSessionDto;
+    path?: never;
+    query?: never;
+    url: '/cash-register/close';
+};
+
+export type CashRegisterControllerCloseSessionErrors = {
+    /**
+     * No active session
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: unknown;
+};
+
+export type CashRegisterControllerCloseSessionResponses = {
+    /**
+     * Session closed with expected vs counted reconciliation
+     */
+    200: unknown;
+};
+
+export type CashRegisterControllerGetSessionSummaryData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/cash-register/sessions/{id}/summary';
+};
+
+export type CashRegisterControllerGetSessionSummaryErrors = {
+    /**
+     * Session not found
+     */
+    404: unknown;
+};
+
+export type CashRegisterControllerGetSessionSummaryResponses = {
+    /**
+     * Session summary with totals by payment method
+     */
+    200: unknown;
+};
+
+export type CashRegisterControllerGetCurrentSummaryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/cash-register/current/summary';
+};
+
+export type CashRegisterControllerGetCurrentSummaryErrors = {
+    /**
+     * No active session
+     */
+    404: unknown;
+};
+
+export type CashRegisterControllerGetCurrentSummaryResponses = {
+    /**
+     * Current session summary
+     */
+    200: unknown;
+};
+
+export type ReportsControllerGetDailySummaryData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Date in YYYY-MM-DD format
+         */
+        date: string;
+        /**
+         * Max number of results to return
+         */
+        limit?: number;
+        format?: 'json' | 'csv';
+    };
+    url: '/reports/daily-summary';
+};
+
+export type ReportsControllerGetDailySummaryResponses = {
+    /**
+     * Total sales, ticket count, average ticket
+     */
+    200: unknown;
+};
+
+export type ReportsControllerGetPaymentMethodBreakdownData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Date in YYYY-MM-DD format
+         */
+        date: string;
+        /**
+         * Max number of results to return
+         */
+        limit?: number;
+        format?: 'json' | 'csv';
+    };
+    url: '/reports/payment-methods';
+};
+
+export type ReportsControllerGetPaymentMethodBreakdownResponses = {
+    /**
+     * Amount per payment method
+     */
+    200: unknown;
+};
+
+export type ReportsControllerGetBestSellingProductsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Date in YYYY-MM-DD format
+         */
+        date: string;
+        /**
+         * Max number of results to return
+         */
+        limit?: number;
+        format?: 'json' | 'csv';
+    };
+    url: '/reports/best-selling';
+};
+
+export type ReportsControllerGetBestSellingProductsResponses = {
+    /**
+     * Top products by quantity sold
+     */
+    200: unknown;
+};
+
+export type ReportsControllerGetClosedTicketsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Start date in YYYY-MM-DD format
+         */
+        startDate: string;
+        /**
+         * End date in YYYY-MM-DD format
+         */
+        endDate: string;
+        format?: 'json' | 'csv';
+    };
+    url: '/reports/closed-tickets';
+};
+
+export type ReportsControllerGetClosedTicketsResponses = {
+    /**
+     * List of closed orders
+     */
+    200: unknown;
+};
+
+export type ReportsControllerGetDailySummaryRangeData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Start date in YYYY-MM-DD format
+         */
+        startDate: string;
+        /**
+         * End date in YYYY-MM-DD format
+         */
+        endDate: string;
+        format?: 'json' | 'csv';
+    };
+    url: '/reports/daily-summary-range';
+};
+
+export type ReportsControllerGetDailySummaryRangeResponses = {
+    /**
+     * Array of daily sales summaries
+     */
+    200: unknown;
+};
+
+export type ReportsControllerGetPaymentMethodBreakdownRangeData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Start date in YYYY-MM-DD format
+         */
+        startDate: string;
+        /**
+         * End date in YYYY-MM-DD format
+         */
+        endDate: string;
+        format?: 'json' | 'csv';
+    };
+    url: '/reports/payment-methods-range';
+};
+
+export type ReportsControllerGetPaymentMethodBreakdownRangeResponses = {
+    /**
+     * Amount per payment method
+     */
+    200: unknown;
+};
+
+export type ReportsControllerGetTicketCountByDayData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Start date in YYYY-MM-DD format
+         */
+        startDate: string;
+        /**
+         * End date in YYYY-MM-DD format
+         */
+        endDate: string;
+        format?: 'json' | 'csv';
+    };
+    url: '/reports/tickets-by-day';
+};
+
+export type ReportsControllerGetTicketCountByDayResponses = {
+    /**
+     * Array of daily ticket counts
+     */
+    200: unknown;
+};
+
+export type TablesControllerFindAllData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/tables';
+};
+
+export type TablesControllerFindAllResponses = {
+    /**
+     * List of tables; OCCUPIED tables include a summary of the active order
+     */
+    200: unknown;
+};
+
+export type TablesControllerCreateData = {
+    body: CreateTableDto;
+    path?: never;
+    query?: never;
+    url: '/tables';
+};
+
+export type TablesControllerCreateErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+};
+
+export type TablesControllerCreateResponses = {
+    /**
+     * Table created
+     */
+    201: unknown;
+};
+
+export type TablesControllerRemoveData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/tables/{id}';
+};
+
+export type TablesControllerRemoveErrors = {
+    /**
+     * Table is currently occupied
+     */
+    400: unknown;
+    /**
+     * Table not found
+     */
+    404: unknown;
+};
+
+export type TablesControllerRemoveResponses = {
+    /**
+     * Table deleted
+     */
+    200: unknown;
+};
+
+export type TablesControllerFindOneData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/tables/{id}';
+};
+
+export type TablesControllerFindOneErrors = {
+    /**
+     * Table not found
+     */
+    404: unknown;
+};
+
+export type TablesControllerFindOneResponses = {
+    /**
+     * Table details
+     */
+    200: unknown;
+};
+
+export type TablesControllerUpdateData = {
+    body: UpdateTableDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/tables/{id}';
+};
+
+export type TablesControllerUpdateErrors = {
+    /**
+     * Table not found
+     */
+    404: unknown;
+};
+
+export type TablesControllerUpdateResponses = {
+    /**
+     * Table updated
+     */
+    200: unknown;
+};
+
+export type ReservationsControllerFindAllData = {
+    body?: never;
+    path?: never;
+    query?: {
+        status?: 'PENDING' | 'CONFIRMED' | 'SEATED' | 'NO_SHOW' | 'CANCELLED';
+        /**
+         * Filter by reservedFor date (YYYY-MM-DD)
+         */
+        date?: string;
+    };
+    url: '/reservations';
+};
+
+export type ReservationsControllerFindAllResponses = {
+    /**
+     * List of reservations
+     */
+    200: unknown;
+};
+
+export type ReservationsControllerCreateData = {
+    body: CreateReservationDto;
+    path?: never;
+    query?: never;
+    url: '/reservations';
+};
+
+export type ReservationsControllerCreateErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+    /**
+     * Table not found
+     */
+    404: unknown;
+};
+
+export type ReservationsControllerCreateResponses = {
+    /**
+     * Reservation created
+     */
+    201: unknown;
+};
+
+export type ReservationsControllerFindOneData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/reservations/{id}';
+};
+
+export type ReservationsControllerFindOneErrors = {
+    /**
+     * Reservation not found
+     */
+    404: unknown;
+};
+
+export type ReservationsControllerFindOneResponses = {
+    /**
+     * Reservation details
+     */
+    200: unknown;
+};
+
+export type ReservationsControllerConfirmData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/reservations/{id}/confirm';
+};
+
+export type ReservationsControllerConfirmErrors = {
+    /**
+     * Reservation not PENDING
+     */
+    400: unknown;
+    /**
+     * Reservation not found
+     */
+    404: unknown;
+};
+
+export type ReservationsControllerConfirmResponses = {
+    /**
+     * Reservation confirmed
+     */
+    200: unknown;
+};
+
+export type ReservationsControllerSeatData = {
+    body: SeatReservationDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/reservations/{id}/seat';
+};
+
+export type ReservationsControllerSeatErrors = {
+    /**
+     * Reservation not CONFIRMED or missing required data
+     */
+    400: unknown;
+    /**
+     * Reservation not found
+     */
+    404: unknown;
+};
+
+export type ReservationsControllerSeatResponses = {
+    /**
+     * Order created/linked
+     */
+    201: unknown;
+};
+
+export type ReservationsControllerNoShowData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/reservations/{id}/no-show';
+};
+
+export type ReservationsControllerNoShowErrors = {
+    /**
+     * Reservation already terminal
+     */
+    400: unknown;
+    /**
+     * Reservation not found
+     */
+    404: unknown;
+};
+
+export type ReservationsControllerNoShowResponses = {
+    /**
+     * Reservation marked NO_SHOW
+     */
+    200: unknown;
+};
+
+export type ReservationsControllerCancelData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/reservations/{id}/cancel';
+};
+
+export type ReservationsControllerCancelErrors = {
+    /**
+     * Reservation already terminal
+     */
+    400: unknown;
+    /**
+     * Reservation not found
+     */
+    404: unknown;
+};
+
+export type ReservationsControllerCancelResponses = {
+    /**
+     * Reservation cancelled
+     */
+    200: unknown;
+};
+
+export type RestaurantsControllerFindAllData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/restaurants';
+};
+
+export type RestaurantsControllerFindAllResponses = {
+    /**
+     * List of restaurants
+     */
+    200: unknown;
+};
+
+export type RestaurantsControllerCreateData = {
+    body: CreateRestaurantDto;
+    path?: never;
+    query?: never;
+    url: '/restaurants';
+};
+
+export type RestaurantsControllerCreateErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+};
+
+export type RestaurantsControllerCreateResponses = {
+    /**
+     * Restaurant created
+     */
     201: unknown;
 };

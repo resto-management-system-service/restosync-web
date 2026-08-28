@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AppControllerHealthData, AppControllerHealthResponses, AuthControllerLoginData, AuthControllerLoginResponses, AuthControllerLogoutData, AuthControllerLogoutResponses, AuthControllerMeData, AuthControllerMeResponses, AuthControllerRefreshData, AuthControllerRefreshResponses, AuthControllerRegisterData, AuthControllerRegisterResponses, CategoriesControllerCreateData, CategoriesControllerCreateResponses, CategoriesControllerFindAllData, CategoriesControllerFindAllResponses, CategoriesControllerFindOneData, CategoriesControllerFindOneResponses, CategoriesControllerRemoveData, CategoriesControllerRemoveResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateResponses, MenuItemsControllerCreateData, MenuItemsControllerCreateResponses, MenuItemsControllerFindAllData, MenuItemsControllerFindAllResponses, MenuItemsControllerFindOneData, MenuItemsControllerFindOneResponses, MenuItemsControllerRemoveData, MenuItemsControllerRemoveResponses, MenuItemsControllerUpdateData, MenuItemsControllerUpdateResponses, OrdersControllerCreateData, OrdersControllerCreateResponses, OrdersControllerFindAllData, OrdersControllerFindAllResponses, OrdersControllerFindOneData, OrdersControllerFindOneResponses, OrdersControllerUpdateStatusData, OrdersControllerUpdateStatusResponses, PaymentsControllerCreateIntentData, PaymentsControllerCreateIntentResponses, UsersControllerFindAllData, UsersControllerFindAllResponses, UsersControllerFindOneData, UsersControllerFindOneResponses } from './types.gen';
+import type { AppControllerHealthData, AppControllerHealthResponses, AuthControllerLoginData, AuthControllerLoginResponses, AuthControllerLogoutData, AuthControllerLogoutResponses, AuthControllerMeData, AuthControllerMeResponses, AuthControllerRefreshData, AuthControllerRefreshResponses, AuthControllerRegisterData, AuthControllerRegisterResponses, CashRegisterControllerCloseSessionData, CashRegisterControllerCloseSessionErrors, CashRegisterControllerCloseSessionResponses, CashRegisterControllerGetCurrentSummaryData, CashRegisterControllerGetCurrentSummaryErrors, CashRegisterControllerGetCurrentSummaryResponses, CashRegisterControllerGetSessionSummaryData, CashRegisterControllerGetSessionSummaryErrors, CashRegisterControllerGetSessionSummaryResponses, CashRegisterControllerOpenSessionData, CashRegisterControllerOpenSessionErrors, CashRegisterControllerOpenSessionResponses, CategoriesControllerCreateData, CategoriesControllerCreateResponses, CategoriesControllerFindAllData, CategoriesControllerFindAllResponses, CategoriesControllerFindOneData, CategoriesControllerFindOneResponses, CategoriesControllerRemoveData, CategoriesControllerRemoveResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateResponses, InventoryControllerAdjustData, InventoryControllerAdjustErrors, InventoryControllerAdjustResponses, InventoryControllerCreateData, InventoryControllerCreateErrors, InventoryControllerCreateResponses, InventoryControllerFindAllData, InventoryControllerFindAllResponses, InventoryControllerFindLowStockData, InventoryControllerFindLowStockResponses, InventoryControllerFindOneData, InventoryControllerFindOneErrors, InventoryControllerFindOneResponses, InventoryControllerRemoveData, InventoryControllerRemoveErrors, InventoryControllerRemoveResponses, InventoryControllerUpdateData, InventoryControllerUpdateErrors, InventoryControllerUpdateResponses, MenuItemsControllerCreateData, MenuItemsControllerCreateResponses, MenuItemsControllerDeactivateData, MenuItemsControllerDeactivateResponses, MenuItemsControllerFindAllData, MenuItemsControllerFindAllResponses, MenuItemsControllerFindOneData, MenuItemsControllerFindOneResponses, MenuItemsControllerRemoveData, MenuItemsControllerRemoveResponses, MenuItemsControllerUpdateData, MenuItemsControllerUpdateResponses, ModifiersControllerAddModifierData, ModifiersControllerAddModifierResponses, ModifiersControllerCreateGroupData, ModifiersControllerCreateGroupResponses, ModifiersControllerListForItemData, ModifiersControllerListForItemResponses, ModifiersControllerRemoveGroupData, ModifiersControllerRemoveGroupResponses, ModifiersControllerRemoveModifierData, ModifiersControllerRemoveModifierResponses, ModifiersControllerUpdateGroupData, ModifiersControllerUpdateGroupResponses, ModifiersControllerUpdateModifierData, ModifiersControllerUpdateModifierResponses, OrdersControllerAddItemData, OrdersControllerAddItemErrors, OrdersControllerAddItemResponses, OrdersControllerApplyDiscountData, OrdersControllerApplyDiscountErrors, OrdersControllerApplyDiscountResponses, OrdersControllerConfirmOrderData, OrdersControllerConfirmOrderErrors, OrdersControllerConfirmOrderResponses, OrdersControllerCreateData, OrdersControllerCreateErrors, OrdersControllerCreateResponses, OrdersControllerFindAllData, OrdersControllerFindAllResponses, OrdersControllerFindOneData, OrdersControllerFindOneResponses, OrdersControllerFindOpenData, OrdersControllerFindOpenErrors, OrdersControllerFindOpenResponses, OrdersControllerGetAuditLogData, OrdersControllerGetAuditLogErrors, OrdersControllerGetAuditLogResponses, OrdersControllerRemoveItemData, OrdersControllerRemoveItemErrors, OrdersControllerRemoveItemResponses, OrdersControllerUpdateItemQuantityData, OrdersControllerUpdateItemQuantityErrors, OrdersControllerUpdateItemQuantityResponses, OrdersControllerUpdateStatusData, OrdersControllerUpdateStatusResponses, PaymentsControllerCheckoutData, PaymentsControllerCheckoutErrors, PaymentsControllerCheckoutResponses, PaymentsControllerCreateIntentData, PaymentsControllerCreateIntentResponses, ReportsControllerGetBestSellingProductsData, ReportsControllerGetBestSellingProductsResponses, ReportsControllerGetClosedTicketsData, ReportsControllerGetClosedTicketsResponses, ReportsControllerGetDailySummaryData, ReportsControllerGetDailySummaryRangeData, ReportsControllerGetDailySummaryRangeResponses, ReportsControllerGetDailySummaryResponses, ReportsControllerGetPaymentMethodBreakdownData, ReportsControllerGetPaymentMethodBreakdownRangeData, ReportsControllerGetPaymentMethodBreakdownRangeResponses, ReportsControllerGetPaymentMethodBreakdownResponses, ReportsControllerGetTicketCountByDayData, ReportsControllerGetTicketCountByDayResponses, ReservationsControllerCancelData, ReservationsControllerCancelErrors, ReservationsControllerCancelResponses, ReservationsControllerConfirmData, ReservationsControllerConfirmErrors, ReservationsControllerConfirmResponses, ReservationsControllerCreateData, ReservationsControllerCreateErrors, ReservationsControllerCreateResponses, ReservationsControllerFindAllData, ReservationsControllerFindAllResponses, ReservationsControllerFindOneData, ReservationsControllerFindOneErrors, ReservationsControllerFindOneResponses, ReservationsControllerNoShowData, ReservationsControllerNoShowErrors, ReservationsControllerNoShowResponses, ReservationsControllerSeatData, ReservationsControllerSeatErrors, ReservationsControllerSeatResponses, RestaurantsControllerCreateData, RestaurantsControllerCreateErrors, RestaurantsControllerCreateResponses, RestaurantsControllerFindAllData, RestaurantsControllerFindAllResponses, TablesControllerCreateData, TablesControllerCreateErrors, TablesControllerCreateResponses, TablesControllerFindAllData, TablesControllerFindAllResponses, TablesControllerFindOneData, TablesControllerFindOneErrors, TablesControllerFindOneResponses, TablesControllerRemoveData, TablesControllerRemoveErrors, TablesControllerRemoveResponses, TablesControllerUpdateData, TablesControllerUpdateErrors, TablesControllerUpdateResponses, UsersControllerFindAllData, UsersControllerFindAllResponses, UsersControllerFindOneData, UsersControllerFindOneResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -101,8 +101,14 @@ export const categoriesControllerUpdate = <ThrowOnError extends boolean = false>
     }
 });
 
+/**
+ * List menu items with optional name search and pagination
+ */
 export const menuItemsControllerFindAll = <ThrowOnError extends boolean = false>(options?: Options<MenuItemsControllerFindAllData, ThrowOnError>): RequestResult<MenuItemsControllerFindAllResponses, unknown, ThrowOnError> => (options?.client ?? client).get<MenuItemsControllerFindAllResponses, unknown, ThrowOnError>({ url: '/menu/items', ...options });
 
+/**
+ * Create a menu item (imageUrl is a public URL, no file upload)
+ */
 export const menuItemsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<MenuItemsControllerCreateData, ThrowOnError>): RequestResult<MenuItemsControllerCreateResponses, unknown, ThrowOnError> => (options.client ?? client).post<MenuItemsControllerCreateResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/menu/items',
@@ -121,9 +127,96 @@ export const menuItemsControllerRemove = <ThrowOnError extends boolean = false>(
 
 export const menuItemsControllerFindOne = <ThrowOnError extends boolean = false>(options: Options<MenuItemsControllerFindOneData, ThrowOnError>): RequestResult<MenuItemsControllerFindOneResponses, unknown, ThrowOnError> => (options.client ?? client).get<MenuItemsControllerFindOneResponses, unknown, ThrowOnError>({ url: '/menu/items/{id}', ...options });
 
+/**
+ * Associate a public image URL with a product
+ */
 export const menuItemsControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<MenuItemsControllerUpdateData, ThrowOnError>): RequestResult<MenuItemsControllerUpdateResponses, unknown, ThrowOnError> => (options.client ?? client).patch<MenuItemsControllerUpdateResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/menu/items/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Deactivate a product (soft delete — preserves order history)
+ */
+export const menuItemsControllerDeactivate = <ThrowOnError extends boolean = false>(options: Options<MenuItemsControllerDeactivateData, ThrowOnError>): RequestResult<MenuItemsControllerDeactivateResponses, unknown, ThrowOnError> => (options.client ?? client).patch<MenuItemsControllerDeactivateResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/menu/items/{id}/deactivate',
+    ...options
+});
+
+/**
+ * List modifier groups and options for a menu item
+ */
+export const modifiersControllerListForItem = <ThrowOnError extends boolean = false>(options: Options<ModifiersControllerListForItemData, ThrowOnError>): RequestResult<ModifiersControllerListForItemResponses, unknown, ThrowOnError> => (options.client ?? client).get<ModifiersControllerListForItemResponses, unknown, ThrowOnError>({ url: '/menu/items/{itemId}/modifier-groups', ...options });
+
+/**
+ * Create a modifier group (optionally with options) on a menu item
+ */
+export const modifiersControllerCreateGroup = <ThrowOnError extends boolean = false>(options: Options<ModifiersControllerCreateGroupData, ThrowOnError>): RequestResult<ModifiersControllerCreateGroupResponses, unknown, ThrowOnError> => (options.client ?? client).post<ModifiersControllerCreateGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/menu/items/{itemId}/modifier-groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a modifier group and its options
+ */
+export const modifiersControllerRemoveGroup = <ThrowOnError extends boolean = false>(options: Options<ModifiersControllerRemoveGroupData, ThrowOnError>): RequestResult<ModifiersControllerRemoveGroupResponses, unknown, ThrowOnError> => (options.client ?? client).delete<ModifiersControllerRemoveGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/menu/modifier-groups/{groupId}',
+    ...options
+});
+
+/**
+ * Update a modifier group
+ */
+export const modifiersControllerUpdateGroup = <ThrowOnError extends boolean = false>(options: Options<ModifiersControllerUpdateGroupData, ThrowOnError>): RequestResult<ModifiersControllerUpdateGroupResponses, unknown, ThrowOnError> => (options.client ?? client).patch<ModifiersControllerUpdateGroupResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/menu/modifier-groups/{groupId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Add an option to a modifier group
+ */
+export const modifiersControllerAddModifier = <ThrowOnError extends boolean = false>(options: Options<ModifiersControllerAddModifierData, ThrowOnError>): RequestResult<ModifiersControllerAddModifierResponses, unknown, ThrowOnError> => (options.client ?? client).post<ModifiersControllerAddModifierResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/menu/modifier-groups/{groupId}/modifiers',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a modifier option
+ */
+export const modifiersControllerRemoveModifier = <ThrowOnError extends boolean = false>(options: Options<ModifiersControllerRemoveModifierData, ThrowOnError>): RequestResult<ModifiersControllerRemoveModifierResponses, unknown, ThrowOnError> => (options.client ?? client).delete<ModifiersControllerRemoveModifierResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/menu/modifiers/{modifierId}',
+    ...options
+});
+
+/**
+ * Update a modifier option
+ */
+export const modifiersControllerUpdateModifier = <ThrowOnError extends boolean = false>(options: Options<ModifiersControllerUpdateModifierData, ThrowOnError>): RequestResult<ModifiersControllerUpdateModifierResponses, unknown, ThrowOnError> => (options.client ?? client).patch<ModifiersControllerUpdateModifierResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/menu/modifiers/{modifierId}',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -137,7 +230,10 @@ export const ordersControllerFindAll = <ThrowOnError extends boolean = false>(op
     ...options
 });
 
-export const ordersControllerCreate = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerCreateData, ThrowOnError>): RequestResult<OrdersControllerCreateResponses, unknown, ThrowOnError> => (options.client ?? client).post<OrdersControllerCreateResponses, unknown, ThrowOnError>({
+/**
+ * Open a new order (supports notes per order and per line)
+ */
+export const ordersControllerCreate = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerCreateData, ThrowOnError>): RequestResult<OrdersControllerCreateResponses, OrdersControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<OrdersControllerCreateResponses, OrdersControllerCreateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/orders',
     ...options,
@@ -145,6 +241,15 @@ export const ordersControllerCreate = <ThrowOnError extends boolean = false>(opt
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * List open orders with current totals
+ */
+export const ordersControllerFindOpen = <ThrowOnError extends boolean = false>(options?: Options<OrdersControllerFindOpenData, ThrowOnError>): RequestResult<OrdersControllerFindOpenResponses, OrdersControllerFindOpenErrors, ThrowOnError> => (options?.client ?? client).get<OrdersControllerFindOpenResponses, OrdersControllerFindOpenErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/orders/open',
+    ...options
 });
 
 export const ordersControllerFindOne = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerFindOneData, ThrowOnError>): RequestResult<OrdersControllerFindOneResponses, unknown, ThrowOnError> => (options.client ?? client).get<OrdersControllerFindOneResponses, unknown, ThrowOnError>({
@@ -163,9 +268,412 @@ export const ordersControllerUpdateStatus = <ThrowOnError extends boolean = fals
     }
 });
 
+/**
+ * Add a product to an open order (supports per-line kitchen notes)
+ */
+export const ordersControllerAddItem = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerAddItemData, ThrowOnError>): RequestResult<OrdersControllerAddItemResponses, OrdersControllerAddItemErrors, ThrowOnError> => (options.client ?? client).post<OrdersControllerAddItemResponses, OrdersControllerAddItemErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/orders/{id}/items',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove a line from an open order
+ */
+export const ordersControllerRemoveItem = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerRemoveItemData, ThrowOnError>): RequestResult<OrdersControllerRemoveItemResponses, OrdersControllerRemoveItemErrors, ThrowOnError> => (options.client ?? client).delete<OrdersControllerRemoveItemResponses, OrdersControllerRemoveItemErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/orders/{id}/items/{itemId}',
+    ...options
+});
+
+/**
+ * Change quantity or notes of an order line
+ */
+export const ordersControllerUpdateItemQuantity = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerUpdateItemQuantityData, ThrowOnError>): RequestResult<OrdersControllerUpdateItemQuantityResponses, OrdersControllerUpdateItemQuantityErrors, ThrowOnError> => (options.client ?? client).patch<OrdersControllerUpdateItemQuantityResponses, OrdersControllerUpdateItemQuantityErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/orders/{id}/items/{itemId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Close an order and send to checkout
+ */
+export const ordersControllerConfirmOrder = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerConfirmOrderData, ThrowOnError>): RequestResult<OrdersControllerConfirmOrderResponses, OrdersControllerConfirmOrderErrors, ThrowOnError> => (options.client ?? client).post<OrdersControllerConfirmOrderResponses, OrdersControllerConfirmOrderErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/orders/{id}/confirm',
+    ...options
+});
+
+/**
+ * Apply a fixed or percentage discount to an open order
+ */
+export const ordersControllerApplyDiscount = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerApplyDiscountData, ThrowOnError>): RequestResult<OrdersControllerApplyDiscountResponses, OrdersControllerApplyDiscountErrors, ThrowOnError> => (options.client ?? client).patch<OrdersControllerApplyDiscountResponses, OrdersControllerApplyDiscountErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/orders/{id}/discount',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get the audit history for an order
+ */
+export const ordersControllerGetAuditLog = <ThrowOnError extends boolean = false>(options: Options<OrdersControllerGetAuditLogData, ThrowOnError>): RequestResult<OrdersControllerGetAuditLogResponses, OrdersControllerGetAuditLogErrors, ThrowOnError> => (options.client ?? client).get<OrdersControllerGetAuditLogResponses, OrdersControllerGetAuditLogErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/orders/{id}/audit-log',
+    ...options
+});
+
 export const paymentsControllerCreateIntent = <ThrowOnError extends boolean = false>(options: Options<PaymentsControllerCreateIntentData, ThrowOnError>): RequestResult<PaymentsControllerCreateIntentResponses, unknown, ThrowOnError> => (options.client ?? client).post<PaymentsControllerCreateIntentResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/payments/intent',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Record payment method on checkout
+ */
+export const paymentsControllerCheckout = <ThrowOnError extends boolean = false>(options: Options<PaymentsControllerCheckoutData, ThrowOnError>): RequestResult<PaymentsControllerCheckoutResponses, PaymentsControllerCheckoutErrors, ThrowOnError> => (options.client ?? client).post<PaymentsControllerCheckoutResponses, PaymentsControllerCheckoutErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/payments/checkout',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List all inventory items
+ */
+export const inventoryControllerFindAll = <ThrowOnError extends boolean = false>(options?: Options<InventoryControllerFindAllData, ThrowOnError>): RequestResult<InventoryControllerFindAllResponses, unknown, ThrowOnError> => (options?.client ?? client).get<InventoryControllerFindAllResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/inventory',
+    ...options
+});
+
+/**
+ * Create a new inventory item
+ */
+export const inventoryControllerCreate = <ThrowOnError extends boolean = false>(options: Options<InventoryControllerCreateData, ThrowOnError>): RequestResult<InventoryControllerCreateResponses, InventoryControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<InventoryControllerCreateResponses, InventoryControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/inventory',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Low-stock alert mechanism — items at or below threshold with urgency level
+ */
+export const inventoryControllerFindLowStock = <ThrowOnError extends boolean = false>(options?: Options<InventoryControllerFindLowStockData, ThrowOnError>): RequestResult<InventoryControllerFindLowStockResponses, unknown, ThrowOnError> => (options?.client ?? client).get<InventoryControllerFindLowStockResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/inventory/low-stock',
+    ...options
+});
+
+/**
+ * Delete an inventory item
+ */
+export const inventoryControllerRemove = <ThrowOnError extends boolean = false>(options: Options<InventoryControllerRemoveData, ThrowOnError>): RequestResult<InventoryControllerRemoveResponses, InventoryControllerRemoveErrors, ThrowOnError> => (options.client ?? client).delete<InventoryControllerRemoveResponses, InventoryControllerRemoveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/inventory/{id}',
+    ...options
+});
+
+/**
+ * Get a single inventory item
+ */
+export const inventoryControllerFindOne = <ThrowOnError extends boolean = false>(options: Options<InventoryControllerFindOneData, ThrowOnError>): RequestResult<InventoryControllerFindOneResponses, InventoryControllerFindOneErrors, ThrowOnError> => (options.client ?? client).get<InventoryControllerFindOneResponses, InventoryControllerFindOneErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/inventory/{id}',
+    ...options
+});
+
+/**
+ * Update an inventory item
+ */
+export const inventoryControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<InventoryControllerUpdateData, ThrowOnError>): RequestResult<InventoryControllerUpdateResponses, InventoryControllerUpdateErrors, ThrowOnError> => (options.client ?? client).patch<InventoryControllerUpdateResponses, InventoryControllerUpdateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/inventory/{id}',
+    ...options
+});
+
+/**
+ * Adjust stock quantity
+ */
+export const inventoryControllerAdjust = <ThrowOnError extends boolean = false>(options: Options<InventoryControllerAdjustData, ThrowOnError>): RequestResult<InventoryControllerAdjustResponses, InventoryControllerAdjustErrors, ThrowOnError> => (options.client ?? client).post<InventoryControllerAdjustResponses, InventoryControllerAdjustErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/inventory/{id}/adjust',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Open cash register with starting float
+ */
+export const cashRegisterControllerOpenSession = <ThrowOnError extends boolean = false>(options: Options<CashRegisterControllerOpenSessionData, ThrowOnError>): RequestResult<CashRegisterControllerOpenSessionResponses, CashRegisterControllerOpenSessionErrors, ThrowOnError> => (options.client ?? client).post<CashRegisterControllerOpenSessionResponses, CashRegisterControllerOpenSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/cash-register/open',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Close cash register with reconciliation
+ */
+export const cashRegisterControllerCloseSession = <ThrowOnError extends boolean = false>(options: Options<CashRegisterControllerCloseSessionData, ThrowOnError>): RequestResult<CashRegisterControllerCloseSessionResponses, CashRegisterControllerCloseSessionErrors, ThrowOnError> => (options.client ?? client).post<CashRegisterControllerCloseSessionResponses, CashRegisterControllerCloseSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/cash-register/close',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get summary for a specific register session
+ */
+export const cashRegisterControllerGetSessionSummary = <ThrowOnError extends boolean = false>(options: Options<CashRegisterControllerGetSessionSummaryData, ThrowOnError>): RequestResult<CashRegisterControllerGetSessionSummaryResponses, CashRegisterControllerGetSessionSummaryErrors, ThrowOnError> => (options.client ?? client).get<CashRegisterControllerGetSessionSummaryResponses, CashRegisterControllerGetSessionSummaryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/cash-register/sessions/{id}/summary',
+    ...options
+});
+
+/**
+ * Get summary for the current active session
+ */
+export const cashRegisterControllerGetCurrentSummary = <ThrowOnError extends boolean = false>(options?: Options<CashRegisterControllerGetCurrentSummaryData, ThrowOnError>): RequestResult<CashRegisterControllerGetCurrentSummaryResponses, CashRegisterControllerGetCurrentSummaryErrors, ThrowOnError> => (options?.client ?? client).get<CashRegisterControllerGetCurrentSummaryResponses, CashRegisterControllerGetCurrentSummaryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/cash-register/current/summary',
+    ...options
+});
+
+/**
+ * Daily sales summary
+ */
+export const reportsControllerGetDailySummary = <ThrowOnError extends boolean = false>(options: Options<ReportsControllerGetDailySummaryData, ThrowOnError>): RequestResult<ReportsControllerGetDailySummaryResponses, unknown, ThrowOnError> => (options.client ?? client).get<ReportsControllerGetDailySummaryResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/daily-summary',
+    ...options
+});
+
+/**
+ * Sales breakdown by payment method
+ */
+export const reportsControllerGetPaymentMethodBreakdown = <ThrowOnError extends boolean = false>(options: Options<ReportsControllerGetPaymentMethodBreakdownData, ThrowOnError>): RequestResult<ReportsControllerGetPaymentMethodBreakdownResponses, unknown, ThrowOnError> => (options.client ?? client).get<ReportsControllerGetPaymentMethodBreakdownResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/payment-methods',
+    ...options
+});
+
+/**
+ * Best-selling products by quantity and revenue
+ */
+export const reportsControllerGetBestSellingProducts = <ThrowOnError extends boolean = false>(options: Options<ReportsControllerGetBestSellingProductsData, ThrowOnError>): RequestResult<ReportsControllerGetBestSellingProductsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ReportsControllerGetBestSellingProductsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/best-selling',
+    ...options
+});
+
+/**
+ * Closed tickets in date range
+ */
+export const reportsControllerGetClosedTickets = <ThrowOnError extends boolean = false>(options: Options<ReportsControllerGetClosedTicketsData, ThrowOnError>): RequestResult<ReportsControllerGetClosedTicketsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ReportsControllerGetClosedTicketsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/closed-tickets',
+    ...options
+});
+
+/**
+ * Daily sales totals for a date range
+ */
+export const reportsControllerGetDailySummaryRange = <ThrowOnError extends boolean = false>(options: Options<ReportsControllerGetDailySummaryRangeData, ThrowOnError>): RequestResult<ReportsControllerGetDailySummaryRangeResponses, unknown, ThrowOnError> => (options.client ?? client).get<ReportsControllerGetDailySummaryRangeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/daily-summary-range',
+    ...options
+});
+
+/**
+ * Payment method breakdown for a date range
+ */
+export const reportsControllerGetPaymentMethodBreakdownRange = <ThrowOnError extends boolean = false>(options: Options<ReportsControllerGetPaymentMethodBreakdownRangeData, ThrowOnError>): RequestResult<ReportsControllerGetPaymentMethodBreakdownRangeResponses, unknown, ThrowOnError> => (options.client ?? client).get<ReportsControllerGetPaymentMethodBreakdownRangeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/payment-methods-range',
+    ...options
+});
+
+/**
+ * Closed ticket count grouped by day
+ */
+export const reportsControllerGetTicketCountByDay = <ThrowOnError extends boolean = false>(options: Options<ReportsControllerGetTicketCountByDayData, ThrowOnError>): RequestResult<ReportsControllerGetTicketCountByDayResponses, unknown, ThrowOnError> => (options.client ?? client).get<ReportsControllerGetTicketCountByDayResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reports/tickets-by-day',
+    ...options
+});
+
+/**
+ * List all tables with their current status
+ */
+export const tablesControllerFindAll = <ThrowOnError extends boolean = false>(options?: Options<TablesControllerFindAllData, ThrowOnError>): RequestResult<TablesControllerFindAllResponses, unknown, ThrowOnError> => (options?.client ?? client).get<TablesControllerFindAllResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tables',
+    ...options
+});
+
+/**
+ * Create a new table
+ */
+export const tablesControllerCreate = <ThrowOnError extends boolean = false>(options: Options<TablesControllerCreateData, ThrowOnError>): RequestResult<TablesControllerCreateResponses, TablesControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<TablesControllerCreateResponses, TablesControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tables',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a table (only if AVAILABLE)
+ */
+export const tablesControllerRemove = <ThrowOnError extends boolean = false>(options: Options<TablesControllerRemoveData, ThrowOnError>): RequestResult<TablesControllerRemoveResponses, TablesControllerRemoveErrors, ThrowOnError> => (options.client ?? client).delete<TablesControllerRemoveResponses, TablesControllerRemoveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tables/{id}',
+    ...options
+});
+
+/**
+ * Get a single table
+ */
+export const tablesControllerFindOne = <ThrowOnError extends boolean = false>(options: Options<TablesControllerFindOneData, ThrowOnError>): RequestResult<TablesControllerFindOneResponses, TablesControllerFindOneErrors, ThrowOnError> => (options.client ?? client).get<TablesControllerFindOneResponses, TablesControllerFindOneErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tables/{id}',
+    ...options
+});
+
+/**
+ * Update a table name/capacity
+ */
+export const tablesControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<TablesControllerUpdateData, ThrowOnError>): RequestResult<TablesControllerUpdateResponses, TablesControllerUpdateErrors, ThrowOnError> => (options.client ?? client).patch<TablesControllerUpdateResponses, TablesControllerUpdateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tables/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List reservations, filterable by status/date
+ */
+export const reservationsControllerFindAll = <ThrowOnError extends boolean = false>(options?: Options<ReservationsControllerFindAllData, ThrowOnError>): RequestResult<ReservationsControllerFindAllResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ReservationsControllerFindAllResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reservations',
+    ...options
+});
+
+/**
+ * Register a reservation (WITH_PREORDER, DEPOSIT_ONLY, or INFORMAL)
+ */
+export const reservationsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<ReservationsControllerCreateData, ThrowOnError>): RequestResult<ReservationsControllerCreateResponses, ReservationsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<ReservationsControllerCreateResponses, ReservationsControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reservations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get a single reservation
+ */
+export const reservationsControllerFindOne = <ThrowOnError extends boolean = false>(options: Options<ReservationsControllerFindOneData, ThrowOnError>): RequestResult<ReservationsControllerFindOneResponses, ReservationsControllerFindOneErrors, ThrowOnError> => (options.client ?? client).get<ReservationsControllerFindOneResponses, ReservationsControllerFindOneErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reservations/{id}',
+    ...options
+});
+
+/**
+ * Confirm a reservation (deposit received); commits the table to RESERVED for paid types
+ */
+export const reservationsControllerConfirm = <ThrowOnError extends boolean = false>(options: Options<ReservationsControllerConfirmData, ThrowOnError>): RequestResult<ReservationsControllerConfirmResponses, ReservationsControllerConfirmErrors, ThrowOnError> => (options.client ?? client).patch<ReservationsControllerConfirmResponses, ReservationsControllerConfirmErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reservations/{id}/confirm',
+    ...options
+});
+
+/**
+ * Seat the customer: creates/links the order and sets the table OCCUPIED
+ */
+export const reservationsControllerSeat = <ThrowOnError extends boolean = false>(options: Options<ReservationsControllerSeatData, ThrowOnError>): RequestResult<ReservationsControllerSeatResponses, ReservationsControllerSeatErrors, ThrowOnError> => (options.client ?? client).post<ReservationsControllerSeatResponses, ReservationsControllerSeatErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reservations/{id}/seat',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mark as a no-show (staff decision, never automatic)
+ */
+export const reservationsControllerNoShow = <ThrowOnError extends boolean = false>(options: Options<ReservationsControllerNoShowData, ThrowOnError>): RequestResult<ReservationsControllerNoShowResponses, ReservationsControllerNoShowErrors, ThrowOnError> => (options.client ?? client).patch<ReservationsControllerNoShowResponses, ReservationsControllerNoShowErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reservations/{id}/no-show',
+    ...options
+});
+
+/**
+ * Cancel a reservation
+ */
+export const reservationsControllerCancel = <ThrowOnError extends boolean = false>(options: Options<ReservationsControllerCancelData, ThrowOnError>): RequestResult<ReservationsControllerCancelResponses, ReservationsControllerCancelErrors, ThrowOnError> => (options.client ?? client).patch<ReservationsControllerCancelResponses, ReservationsControllerCancelErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/reservations/{id}/cancel',
+    ...options
+});
+
+/**
+ * List all restaurants
+ */
+export const restaurantsControllerFindAll = <ThrowOnError extends boolean = false>(options?: Options<RestaurantsControllerFindAllData, ThrowOnError>): RequestResult<RestaurantsControllerFindAllResponses, unknown, ThrowOnError> => (options?.client ?? client).get<RestaurantsControllerFindAllResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/restaurants',
+    ...options
+});
+
+/**
+ * Create a new restaurant (empty isolated space)
+ */
+export const restaurantsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<RestaurantsControllerCreateData, ThrowOnError>): RequestResult<RestaurantsControllerCreateResponses, RestaurantsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<RestaurantsControllerCreateResponses, RestaurantsControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/restaurants',
     ...options,
     headers: {
         'Content-Type': 'application/json',
