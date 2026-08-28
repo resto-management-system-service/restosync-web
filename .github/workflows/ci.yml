@@ -44,6 +44,9 @@ jobs:
       - name: Run Typecheck
         run: pnpm typecheck
 
+      - name: Run Tests
+        run: pnpm test
+
       - name: Build Project
         env:
           NEXT_PUBLIC_SENTRY_DISABLED: 'true'

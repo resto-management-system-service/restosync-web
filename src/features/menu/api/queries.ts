@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { getMenuItems, getMenuItemById, getCategories } from './service';
+import { getMenuItems, getMenuItemById, getCategories, getCategoryById } from './service';
 import type { MenuItemFilters } from './types';
 
 // ============================================================
@@ -10,7 +10,8 @@ export const menuKeys = {
   all: ['menu'] as const,
   items: (filters: MenuItemFilters) => [...menuKeys.all, 'items', filters] as const,
   detail: (id: string) => [...menuKeys.all, 'detail', id] as const,
-  categories: () => [...menuKeys.all, 'categories'] as const
+  categories: () => [...menuKeys.all, 'categories'] as const,
+  category: (id: string) => [...menuKeys.all, 'category', id] as const
 };
 
 /**
@@ -39,4 +40,14 @@ export const categoriesQueryOptions = () =>
   queryOptions({
     queryKey: menuKeys.categories(),
     queryFn: () => getCategories()
+  });
+
+/**
+ * Query options for fetching a single category.
+ */
+export const categoryByIdOptions = (id: string) =>
+  queryOptions({
+    queryKey: menuKeys.category(id),
+    queryFn: () => getCategoryById(id),
+    enabled: !!id
   });

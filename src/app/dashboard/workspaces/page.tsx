@@ -2,9 +2,18 @@
 
 import PageContainer from '@/components/layout/page-container';
 import { OrganizationList } from '@clerk/nextjs';
+import { AuthDisabledNotice } from '@/components/auth/auth-disabled-notice';
+import { AUTH_DISABLED } from '@/lib/auth';
 import { workspacesInfoContent } from '@/config/infoconfig';
 
 export default function WorkspacesPage() {
+  if (AUTH_DISABLED) {
+    return (
+      <PageContainer pageTitle='Workspaces'>
+        <AuthDisabledNotice feature='Workspaces' />
+      </PageContainer>
+    );
+  }
   return (
     <PageContainer
       pageTitle='Workspaces'

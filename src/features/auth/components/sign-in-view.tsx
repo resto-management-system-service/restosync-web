@@ -2,6 +2,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { GitHubStarsButton } from '@/components/github-stars-button';
 import { cn } from '@/lib/utils';
 import { SignIn as ClerkSignInForm } from '@clerk/nextjs';
+import { AUTH_DISABLED } from '@/lib/auth';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { InteractiveGridPattern } from './interactive-grid';
@@ -66,11 +67,17 @@ export default function SignInViewPage() {
             variant='outline'
             size='default'
           />
-          <ClerkSignInForm
-            initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
-            }}
-          />
+          {AUTH_DISABLED ? (
+            <Link href='/dashboard/overview' className={cn(buttonVariants(), 'w-full')}>
+              Continue to dashboard (auth disabled)
+            </Link>
+          ) : (
+            <ClerkSignInForm
+              initialValues={{
+                emailAddress: 'your_mail+clerk_test@example.com'
+              }}
+            />
+          )}
           <div className='text-muted-foreground space-y-2 px-8 text-center text-xs'>
             <p>
               This is an{' '}

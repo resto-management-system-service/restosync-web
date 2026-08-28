@@ -1,14 +1,20 @@
 /**
  * Development auth bypass.
  *
- * Set `NEXT_PUBLIC_DISABLE_AUTH=true` in `.env.local` to skip the Clerk login
- * stage entirely during local development: the middleware stops protecting
- * `/dashboard`, the landing/redirect pages send you straight to the dashboard,
- * and the UI is fed a mock user so the sidebar/profile render.
+ * Set `NEXT_PUBLIC_DISABLE_AUTH=true` in `.env.local` to take Clerk out of the
+ * loop entirely during local development:
+ *   - the middleware stops protecting `/dashboard`
+ *   - the landing / redirect pages go straight to the dashboard
+ *   - `<ClerkProvider>` is not mounted (`components/layout/providers.tsx`), so no
+ *     keyless-mode UI / network calls
+ *   - `useCurrentUser` / `useCurrentOrg` return mock values instead of calling
+ *     Clerk hooks; `<SignOutButton>` renders an inert label
+ *   - Clerk-only screens (workspaces, billing, exclusive, profile, auth) render
+ *     an `<AuthDisabledNotice>` placeholder
  *
- * This only removes the *client-facing* gate. It never affects production
- * builds unless the flag is explicitly set, and server-side `has()` / API
- * authorization still behave as configured.
+ * It never affects a build unless the flag is explicitly set to the string
+ * "true". `AUTH_DISABLED` is a module-load constant, so the `? :` swaps in the
+ * hook wrappers stay stable across renders (rules-of-hooks safe).
  */
 export const AUTH_DISABLED = process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true';
 

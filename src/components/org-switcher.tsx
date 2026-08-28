@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth, useOrganizationList } from '@clerk/nextjs';
+import { AUTH_DISABLED } from '@/lib/auth';
 import { Icons } from '@/components/icons';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -22,7 +23,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useEffect } from 'react';
 
-export function OrgSwitcher() {
+function RealOrgSwitcher() {
   const { isMobile, state } = useSidebar();
   const router = useRouter();
   const { isLoaded, setActive, userMemberships } = useOrganizationList({
@@ -224,3 +225,31 @@ export function OrgSwitcher() {
     </SidebarMenu>
   );
 }
+
+/** Static sidebar header used when `NEXT_PUBLIC_DISABLE_AUTH=true` (no Clerk context). */
+function DevOrgSwitcher() {
+  const { state } = useSidebar();
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton size='lg' disabled>
+          <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg'>
+            <Icons.galleryVerticalEnd className='size-4' />
+          </div>
+          <div
+            className={`grid flex-1 text-left text-sm leading-tight transition-all duration-200 ease-in-out ${
+              state === 'collapsed'
+                ? 'invisible max-w-0 overflow-hidden opacity-0'
+                : 'visible max-w-full opacity-100'
+            }`}
+          >
+            <span className='truncate font-medium'>Dev Workspace</span>
+            <span className='text-muted-foreground truncate text-xs'>Auth disabled</span>
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
+export const OrgSwitcher = AUTH_DISABLED ? DevOrgSwitcher : RealOrgSwitcher;

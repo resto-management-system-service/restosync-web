@@ -3,12 +3,19 @@
 // ============================================================
 import {
   menuItemsControllerFindAll,
+  menuItemsControllerFindOne,
   menuItemsControllerCreate,
   menuItemsControllerUpdate,
   menuItemsControllerRemove,
   categoriesControllerFindAll,
+  categoriesControllerFindOne,
+  categoriesControllerCreate,
+  categoriesControllerUpdate,
+  categoriesControllerRemove,
   type CreateMenuItemDto,
-  type UpdateMenuItemDto
+  type UpdateMenuItemDto,
+  type CreateCategoryDto,
+  type UpdateCategoryDto
 } from '@/api-client';
 import type { MenuItem, Category, MenuItemFilters } from './types';
 
@@ -35,26 +42,20 @@ export async function getMenuItems(filters?: MenuItemFilters): Promise<MenuItem[
  * Fetch a single menu item by ID.
  */
 export async function getMenuItemById(id: string): Promise<MenuItem> {
-  // Use client-fetch helper with throwOnError option
-  const { data } = await menuItemsControllerFindAll({
-    query: { categoryId: undefined },
-    throwOnError: true
-  });
+  const { data, error } = await menuItemsControllerFindOne({ path: { id } });
 
-  const item = (data as MenuItem[])?.find((i) => i.id === id);
-  if (!item) {
+  if (error) {
     throw new Error(`Menu item not found: ${id}`);
   }
-  return item;
+
+  return data as MenuItem;
 }
 
 /**
  * Create a new menu item.
  */
 export async function createMenuItem(payload: CreateMenuItemDto): Promise<MenuItem> {
-  const { data, error } = await menuItemsControllerCreate({
-    body: payload
-  });
+  const { data, error } = await menuItemsControllerCreate({ body: payload });
 
   if (error) {
     throw new Error(`Failed to create menu item: ${JSON.stringify(error)}`);
@@ -67,10 +68,7 @@ export async function createMenuItem(payload: CreateMenuItemDto): Promise<MenuIt
  * Update an existing menu item.
  */
 export async function updateMenuItem(id: string, payload: UpdateMenuItemDto): Promise<MenuItem> {
-  const { data, error } = await menuItemsControllerUpdate({
-    path: { id },
-    body: payload
-  });
+  const { data, error } = await menuItemsControllerUpdate({ path: { id }, body: payload });
 
   if (error) {
     throw new Error(`Failed to update menu item: ${JSON.stringify(error)}`);
@@ -83,9 +81,7 @@ export async function updateMenuItem(id: string, payload: UpdateMenuItemDto): Pr
  * Delete a menu item by ID.
  */
 export async function deleteMenuItem(id: string): Promise<void> {
-  const { error } = await menuItemsControllerRemove({
-    path: { id }
-  });
+  const { error } = await menuItemsControllerRemove({ path: { id } });
 
   if (error) {
     throw new Error(`Failed to delete menu item: ${JSON.stringify(error)}`);
@@ -103,4 +99,54 @@ export async function getCategories(): Promise<Category[]> {
   }
 
   return (data as Category[]) ?? [];
+}
+
+/**
+ * Fetch a single category by ID.
+ */
+export async function getCategoryById(id: string): Promise<Category> {
+  const { data, error } = await categoriesControllerFindOne({ path: { id } });
+
+  if (error) {
+    throw new Error(`Category not found: ${id}`);
+  }
+
+  return data as Category;
+}
+
+/**
+ * Create a new category.
+ */
+export async function createCategory(payload: CreateCategoryDto): Promise<Category> {
+  const { data, error } = await categoriesControllerCreate({ body: payload });
+
+  if (error) {
+    throw new Error(`Failed to create category: ${JSON.stringify(error)}`);
+  }
+
+  return data as Category;
+}
+
+/**
+ * Update an existing category.
+ */
+export async function updateCategory(id: string, payload: UpdateCategoryDto): Promise<Category> {
+  const { data, error } = await categoriesControllerUpdate({ path: { id }, body: payload });
+
+  if (error) {
+    throw new Error(`Failed to update category: ${JSON.stringify(error)}`);
+  }
+
+  return data as Category;
+}
+
+/**
+ * Delete a category by ID.
+ */
+export async function deleteCategory(id: string): Promise<void> {
+  const { error } = await categoriesControllerRemove({ path: { id } });
+
+  if (error) {
+    throw new Error(`Failed to delete category: ${JSON.stringify(error)}`);
+  }
 }

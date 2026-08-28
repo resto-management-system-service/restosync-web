@@ -18,6 +18,7 @@
     "scripts/**",
     "src/api-client/generated/**",
     "src/api-client/openapi.json",
+    "public/mockServiceWorker.js",
     "pnpm-lock.yaml",
     "CHANGELOG.md"
   ],
