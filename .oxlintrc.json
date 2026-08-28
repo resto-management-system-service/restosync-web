@@ -12,7 +12,8 @@
     "build/**",
     "next-env.d.ts",
     "scripts/**",
-    "src/api-client/generated/**"
+    "src/api-client/generated/**",
+    "public/mockServiceWorker.js"
   ],
   "settings": {
     "jsx-a11y": {

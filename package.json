@@ -122,7 +122,7 @@
   },
   "lint-staged": {
     "!(scripts)/**/*.{js,jsx,tsx,ts,css,less,scss,sass}": [
-      "oxfmt --write"
+      "oxfmt --write --no-error-on-unmatched-pattern"
     ]
   },
   "packageManager": "pnpm@9.15.9",
