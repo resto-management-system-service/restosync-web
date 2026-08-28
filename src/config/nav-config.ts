@@ -74,7 +74,10 @@ export const navGroups: NavGroup[] = [
         icon: 'product',
         shortcut: ['m', 'n'],
         isActive: false,
-        items: []
+        items: [
+          { title: 'Items', url: '/dashboard/menu', icon: 'product' },
+          { title: 'Categories', url: '/dashboard/menu/categories', icon: 'kanban' }
+        ]
       },
       {
         title: 'Users',
