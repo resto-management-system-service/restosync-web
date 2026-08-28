@@ -26,6 +26,7 @@ small, documented change.
 Two resources under `/menu`:
 
 **Categories**
+
 - `GET  /menu/categories`
 - `POST /menu/categories` — `CreateCategoryDto { name*, sortOrder?, active? }`
 - `GET    /menu/categories/{id}`
@@ -33,6 +34,7 @@ Two resources under `/menu`:
 - `DELETE /menu/categories/{id}`
 
 **Items**
+
 - `GET  /menu/items?categoryId&available`
 - `POST /menu/items` — `CreateMenuItemDto { name*, description?, priceCents*, currency?, imageUrl?, available?, categoryId* }`
 - `GET    /menu/items/{id}`
@@ -95,7 +97,7 @@ Behaviour, contract-faithful:
   `{ statusCode: 400, message: 'category not found', error: 'Bad Request' }`.
 - `DELETE /menu/categories/:id` while items reference it → `409`
   `{ statusCode: 409, message: 'category has menu items', error: 'Conflict' }`.
-  *(Assumption about real-API behaviour — see Section 4.)*
+  _(Assumption about real-API behaviour — see Section 4.)_
 - Any unknown id → `404`.
 - `POST` returns `201`; `GET` / `PATCH` / `DELETE` return `200`; `DELETE` body is the
   deleted resource.
@@ -113,9 +115,7 @@ Behaviour, contract-faithful:
   guaranteed in this file, so use a promise chain:
   ```ts
   if (process.env.NODE_ENV === 'development') {
-    import('@/mocks/browser').then(({ worker }) =>
-      worker.start({ onUnhandledRequest: 'bypass' })
-    );
+    import('@/mocks/browser').then(({ worker }) => worker.start({ onUnhandledRequest: 'bypass' }));
   }
   ```
   The initial menu list is prefetched server-side (the Node `server` is already
@@ -175,8 +175,10 @@ src/features/menu/
 export const menuItemFormSchema = z.object({
   name: z.string().min(2, 'Item name must be at least 2 characters.'),
   description: z.string().max(500).optional(),
-  priceDollars: z.number({ message: 'Price is required.' }).positive('Price must be greater than 0.'),
-  currency: z.string().min(1),                 // defaults to 'USD'
+  priceDollars: z
+    .number({ message: 'Price is required.' })
+    .positive('Price must be greater than 0.'),
+  currency: z.string().min(1), // defaults to 'USD'
   imageUrl: z.string().url('Must be a valid URL.').optional().or(z.literal('')),
   available: z.boolean(),
   categoryId: z.string().min(1, 'Please select a category.')
@@ -185,6 +187,7 @@ export type MenuItemFormValues = z.input<typeof menuItemFormSchema>;
 ```
 
 Helpers in the same file:
+
 - `toCreateDto(values): CreateMenuItemDto` — `priceCents = Math.round(priceDollars * 100)`,
   drops empty `imageUrl`/`description`.
 - `toUpdateDto(values): UpdateMenuItemDto` — same mapping.
@@ -315,15 +318,15 @@ Component tests render inside a `QueryClientProvider` (a `renderWithProviders` h
 
 ## Section 4 — Deliberate divergences / assumptions
 
-| # | Decision | Reason |
-|---|----------|--------|
-| 1 | `src/features/menu/api/types.ts` is the contract for response shapes | spec types responses as `unknown`; revisit the casts in `service.ts` when the API publishes response schemas |
-| 2 | Menu-item table paginates client-side | `GET /menu/items` returns a bare array, no server pagination |
-| 3 | `DELETE /menu/categories/:id` returns `409` when items reference it | plausible real-API behaviour and gives the UI an error path to handle and test |
-| 4 | `currency` field defaults to `'USD'` and is rarely changed | single-currency assumption for now; field kept so the payload stays contract-complete |
-| 5 | `imageUrl` is an optional free-text URL, no upload | image upload is out of scope |
-| 6 | MSW runs whenever `NODE_ENV === 'development'` | chosen over an env flag for simplicity; removal steps in `src/mocks/README.md` |
-| 7 | `src/mocks/` is separate from `src/constants/mock-api.ts` | the latter is demo data for the products showcase; menu is contract-driven |
+| #   | Decision                                                             | Reason                                                                                                       |
+| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1   | `src/features/menu/api/types.ts` is the contract for response shapes | spec types responses as `unknown`; revisit the casts in `service.ts` when the API publishes response schemas |
+| 2   | Menu-item table paginates client-side                                | `GET /menu/items` returns a bare array, no server pagination                                                 |
+| 3   | `DELETE /menu/categories/:id` returns `409` when items reference it  | plausible real-API behaviour and gives the UI an error path to handle and test                               |
+| 4   | `currency` field defaults to `'USD'` and is rarely changed           | single-currency assumption for now; field kept so the payload stays contract-complete                        |
+| 5   | `imageUrl` is an optional free-text URL, no upload                   | image upload is out of scope                                                                                 |
+| 6   | MSW runs whenever `NODE_ENV === 'development'`                       | chosen over an env flag for simplicity; removal steps in `src/mocks/README.md`                               |
+| 7   | `src/mocks/` is separate from `src/constants/mock-api.ts`            | the latter is demo data for the products showcase; menu is contract-driven                                   |
 
 ## Suggested implementation phasing
 

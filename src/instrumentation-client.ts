@@ -18,6 +18,12 @@ if (!process.env.NEXT_PUBLIC_SENTRY_DISABLED) {
   });
 }
 
+// Mock the RestoSync API in the browser while the real backend is not deployed.
+// Remove this block (and src/mocks/browser.ts) once the API is live — see src/mocks/README.md.
+if (process.env.NODE_ENV === 'development') {
+  import('@/mocks/browser').then(({ worker }) => worker.start({ onUnhandledRequest: 'bypass' }));
+}
+
 // Required by Next.js to instrument router transitions for Sentry tracing.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sentry SDK v10 typing mismatch
 export const onRouterTransitionStart = (Sentry as any).captureRouterTransitionStart;
