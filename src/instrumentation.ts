@@ -29,14 +29,6 @@ export async function register() {
       Sentry.init(sentryOptions);
     }
   }
-
-  // Mock the RestoSync API for server-side data fetching (RSC prefetch) while the
-  // real backend is not deployed. Remove this block once the API is live —
-  // see src/mocks/README.md.
-  if (process.env.NODE_ENV === 'development' && process.env.NEXT_RUNTIME === 'nodejs') {
-    const { server } = await import('@/mocks/server');
-    server.listen({ onUnhandledRequest: 'bypass' });
-  }
 }
 
 export const onRequestError = Sentry.captureRequestError;

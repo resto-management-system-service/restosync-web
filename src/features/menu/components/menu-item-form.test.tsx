@@ -39,5 +39,5 @@ it('creates an item, converting dollars to integer cents', async () => {
   const created = db.items.find((i) => i.name === 'Garlic Bread');
   expect(created?.priceCents).toBe(525);
   expect(created?.categoryId).toBe(categoryId);
-  await waitFor(() => expect(routerMock.push).toHaveBeenCalledWith('/dashboard/menu'));
+  await waitFor(() => expect(routerMock.push).toHaveBeenCalledWith('/dashboard/menu/items'));
 });

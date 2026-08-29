@@ -3,7 +3,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import CategoryListing from '@/features/menu/components/category-listing';
+import { CategoryTable } from '@/features/menu/components/category-tables';
 
 export const metadata = {
   title: 'Dashboard: Menu Categories'
@@ -17,13 +17,14 @@ export default function Page() {
       pageHeaderAction={
         <Link
           href='/dashboard/menu/categories/new'
+          prefetch={false}
           className={cn(buttonVariants(), 'text-xs md:text-sm')}
         >
           <Icons.add className='mr-2 h-4 w-4' /> Add Category
         </Link>
       }
     >
-      <CategoryListing />
+      <CategoryTable />
     </PageContainer>
   );
 }

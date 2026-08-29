@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { schemas } from '@/api-client';
 import { db, findCategory, findItem } from '../db';
+import { API_URL } from '../api-url';
 import type { MenuItem } from '../types';
 
 const err = (statusCode: number, message: string | string[], error: string) =>
@@ -31,7 +32,7 @@ const ITEM_KEYS = [
 ] as const;
 
 export const menuItemsHandlers = [
-  http.get('*/menu/items', ({ request }) => {
+  http.get(`${API_URL}/menu/items`, ({ request }) => {
     const url = new URL(request.url);
     const categoryId = url.searchParams.get('categoryId');
     const available = url.searchParams.get('available');
@@ -41,12 +42,12 @@ export const menuItemsHandlers = [
     return HttpResponse.json(items);
   }),
 
-  http.get('*/menu/items/:id', ({ params }) => {
+  http.get(`${API_URL}/menu/items/:id`, ({ params }) => {
     const item = findItem(String(params.id));
     return item ? HttpResponse.json(item) : err(404, 'menu item not found', 'Not Found');
   }),
 
-  http.post('*/menu/items', async ({ request }) => {
+  http.post(`${API_URL}/menu/items`, async ({ request }) => {
     const parsed = schemas.zCreateMenuItemDto.safeParse(await request.json());
     if (!parsed.success) {
       return err(
@@ -75,7 +76,7 @@ export const menuItemsHandlers = [
     return HttpResponse.json(item, { status: 201 });
   }),
 
-  http.patch('*/menu/items/:id', async ({ params, request }) => {
+  http.patch(`${API_URL}/menu/items/:id`, async ({ params, request }) => {
     const item = findItem(String(params.id));
     if (!item) return err(404, 'menu item not found', 'Not Found');
     const raw = await request.json();
@@ -95,7 +96,7 @@ export const menuItemsHandlers = [
     return HttpResponse.json(item);
   }),
 
-  http.delete('*/menu/items/:id', ({ params }) => {
+  http.delete(`${API_URL}/menu/items/:id`, ({ params }) => {
     const id = String(params.id);
     const item = findItem(id);
     if (!item) return err(404, 'menu item not found', 'Not Found');

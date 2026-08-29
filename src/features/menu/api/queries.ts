@@ -5,6 +5,10 @@ import type { MenuItemFilters } from './types';
 // ============================================================
 // Menu Query Key Factory & Query Options
 // ============================================================
+// `staleTime: 0` on every menu query: server-side prefetch runs against the Node
+// MSW instance, which shares only the seed with the browser MSW instance. Marking
+// hydrated data immediately stale makes the client refetch from the browser store
+// on mount, so what you see always matches the store your mutations write to.
 
 export const menuKeys = {
   all: ['menu'] as const,
@@ -14,40 +18,32 @@ export const menuKeys = {
   category: (id: string) => [...menuKeys.all, 'category', id] as const
 };
 
-/**
- * Query options for fetching the list of menu items.
- */
 export const menuItemsQueryOptions = (filters: MenuItemFilters = {}) =>
   queryOptions({
     queryKey: menuKeys.items(filters),
-    queryFn: () => getMenuItems(filters)
+    queryFn: () => getMenuItems(filters),
+    staleTime: 0
   });
 
-/**
- * Query options for fetching a single menu item.
- */
 export const menuItemByIdOptions = (id: string) =>
   queryOptions({
     queryKey: menuKeys.detail(id),
     queryFn: () => getMenuItemById(id),
-    enabled: !!id
+    enabled: !!id,
+    staleTime: 0
   });
 
-/**
- * Query options for fetching categories.
- */
 export const categoriesQueryOptions = () =>
   queryOptions({
     queryKey: menuKeys.categories(),
-    queryFn: () => getCategories()
+    queryFn: () => getCategories(),
+    staleTime: 0
   });
 
-/**
- * Query options for fetching a single category.
- */
 export const categoryByIdOptions = (id: string) =>
   queryOptions({
     queryKey: menuKeys.category(id),
     queryFn: () => getCategoryById(id),
-    enabled: !!id
+    enabled: !!id,
+    staleTime: 0
   });

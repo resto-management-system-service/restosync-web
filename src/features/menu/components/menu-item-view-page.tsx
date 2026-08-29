@@ -1,7 +1,8 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
+import FormCardSkeleton from '@/components/form-card-skeleton';
 import { menuItemByIdOptions } from '../api/queries';
 import { menuItemToFormValues } from '../schemas/menu-item';
 import MenuItemForm from './menu-item-form';
@@ -14,8 +15,11 @@ export default function MenuItemViewPage({ itemId }: { itemId: string }) {
 }
 
 function EditMenuItem({ itemId }: { itemId: string }) {
-  const { data } = useSuspenseQuery(menuItemByIdOptions(itemId));
-  if (!data) notFound();
+  const { data, isPending, isError } = useQuery(menuItemByIdOptions(itemId));
+
+  if (isPending) return <FormCardSkeleton />;
+  if (isError || !data) notFound();
+
   return (
     <MenuItemForm
       menuItemId={itemId}

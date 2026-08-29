@@ -1,6 +1,4 @@
-import { Suspense } from 'react';
 import PageContainer from '@/components/layout/page-container';
-import FormCardSkeleton from '@/components/form-card-skeleton';
 import CategoryViewPage from '@/features/menu/components/category-view-page';
 
 export const metadata = {
@@ -13,9 +11,7 @@ export default async function Page(props: { params: Promise<{ categoryId: string
   return (
     <PageContainer>
       <div className='flex-1 space-y-4'>
-        <Suspense fallback={<FormCardSkeleton />}>
-          <CategoryViewPage categoryId={categoryId} />
-        </Suspense>
+        <CategoryViewPage categoryId={categoryId} />
       </div>
     </PageContainer>
   );

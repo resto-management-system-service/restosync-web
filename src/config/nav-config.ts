@@ -70,12 +70,12 @@ export const navGroups: NavGroup[] = [
       },
       {
         title: 'Menu',
-        url: '/dashboard/menu',
+        url: '/dashboard/menu/items',
         icon: 'product',
         shortcut: ['m', 'n'],
         isActive: false,
         items: [
-          { title: 'Items', url: '/dashboard/menu', icon: 'product' },
+          { title: 'Items', url: '/dashboard/menu/items', icon: 'product' },
           { title: 'Categories', url: '/dashboard/menu/categories', icon: 'kanban' }
         ]
       },
