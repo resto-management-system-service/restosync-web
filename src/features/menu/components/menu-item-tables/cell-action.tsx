@@ -46,7 +46,7 @@ export function CellAction({ data }: { data: MenuItem }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => router.push(`/dashboard/menu/${data.id}`)}>
+          <DropdownMenuItem onClick={() => router.push(`/dashboard/menu/items/${data.id}`)}>
             <Icons.edit className='mr-2 h-4 w-4' /> Update
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setOpen(true)}>

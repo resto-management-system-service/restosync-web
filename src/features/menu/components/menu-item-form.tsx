@@ -3,7 +3,7 @@
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -39,14 +39,14 @@ export default function MenuItemForm({
   const router = useRouter();
   const isEdit = !!menuItemId;
 
-  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
+  const { data: categories } = useQuery(categoriesQueryOptions());
+  const categoryOptions = (categories ?? []).map((c) => ({ value: c.id, label: c.name }));
 
   const createMutation = useMutation({
     ...createMenuItemMutation,
     onSuccess: () => {
       toast.success('Menu item created');
-      router.push('/dashboard/menu');
+      router.push('/dashboard/menu/items');
     },
     onError: () => toast.error('Failed to create menu item')
   });
@@ -55,7 +55,7 @@ export default function MenuItemForm({
     ...updateMenuItemMutation,
     onSuccess: () => {
       toast.success('Menu item updated');
-      router.push('/dashboard/menu');
+      router.push('/dashboard/menu/items');
     },
     onError: () => toast.error('Failed to update menu item')
   });

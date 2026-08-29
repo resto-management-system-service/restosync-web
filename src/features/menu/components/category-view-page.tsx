@@ -1,7 +1,8 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
+import FormCardSkeleton from '@/components/form-card-skeleton';
 import { categoryByIdOptions } from '../api/queries';
 import { categoryToFormValues } from '../schemas/category';
 import CategoryForm from './category-form';
@@ -14,8 +15,11 @@ export default function CategoryViewPage({ categoryId }: { categoryId: string })
 }
 
 function EditCategory({ categoryId }: { categoryId: string }) {
-  const { data } = useSuspenseQuery(categoryByIdOptions(categoryId));
-  if (!data) notFound();
+  const { data, isPending, isError } = useQuery(categoryByIdOptions(categoryId));
+
+  if (isPending) return <FormCardSkeleton />;
+  if (isError || !data) notFound();
+
   return (
     <CategoryForm
       categoryId={categoryId}

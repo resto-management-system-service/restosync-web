@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { schemas } from '@/api-client';
 import { db, findCategory, itemsInCategory, nextSortOrder } from '../db';
+import { API_URL } from '../api-url';
 import type { Category } from '../types';
 
 const err = (statusCode: number, message: string | string[], error: string) =>
@@ -22,16 +23,16 @@ function pick<T extends object>(raw: unknown, allowed: readonly (keyof T)[]): Pa
 }
 
 export const menuCategoriesHandlers = [
-  http.get('*/menu/categories', () =>
+  http.get(`${API_URL}/menu/categories`, () =>
     HttpResponse.json(db.categories.toSorted((a, b) => a.sortOrder - b.sortOrder))
   ),
 
-  http.get('*/menu/categories/:id', ({ params }) => {
+  http.get(`${API_URL}/menu/categories/:id`, ({ params }) => {
     const cat = findCategory(String(params.id));
     return cat ? HttpResponse.json(cat) : err(404, 'category not found', 'Not Found');
   }),
 
-  http.post('*/menu/categories', async ({ request }) => {
+  http.post(`${API_URL}/menu/categories`, async ({ request }) => {
     const parsed = schemas.zCreateCategoryDto.safeParse(await request.json());
     if (!parsed.success) {
       return err(
@@ -53,7 +54,7 @@ export const menuCategoriesHandlers = [
     return HttpResponse.json(cat, { status: 201 });
   }),
 
-  http.patch('*/menu/categories/:id', async ({ params, request }) => {
+  http.patch(`${API_URL}/menu/categories/:id`, async ({ params, request }) => {
     const cat = findCategory(String(params.id));
     if (!cat) return err(404, 'category not found', 'Not Found');
     const raw = await request.json();
@@ -71,7 +72,7 @@ export const menuCategoriesHandlers = [
     return HttpResponse.json(cat);
   }),
 
-  http.delete('*/menu/categories/:id', ({ params }) => {
+  http.delete(`${API_URL}/menu/categories/:id`, ({ params }) => {
     const id = String(params.id);
     const cat = findCategory(id);
     if (!cat) return err(404, 'category not found', 'Not Found');

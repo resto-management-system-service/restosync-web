@@ -2,8 +2,9 @@
 
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
+import { DataTableSkeleton } from '@/components/ui/table/data-table-skeleton';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
 import { getSortingStateParser } from '@/lib/parsers';
@@ -23,25 +24,26 @@ export function MenuItemTable() {
     sort: getSortingStateParser(COLUMN_IDS).withDefault([])
   });
 
-  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const { data: categories } = useQuery(categoriesQueryOptions());
 
   const filters: MenuItemFilters = {
     ...(params.categoryId ? { categoryId: params.categoryId } : {}),
     ...(params.available ? { available: params.available === 'true' } : {})
   };
-  const { data: items } = useSuspenseQuery(menuItemsQueryOptions(filters));
+  const { data: items, isPending } = useQuery(menuItemsQueryOptions(filters));
 
   const categoryName = useMemo(() => {
-    const map = new Map(categories.map((c) => [c.id, c.name]));
+    const map = new Map((categories ?? []).map((c) => [c.id, c.name]));
     return (id: string) => map.get(id) ?? '—';
   }, [categories]);
 
   const columns = useMemo(() => buildColumns(categoryName), [categoryName]);
 
   const filtered = useMemo(() => {
-    if (!params.name) return items;
+    const list = items ?? [];
+    if (!params.name) return list;
     const q = params.name.toLowerCase();
-    return items.filter((i) => i.name.toLowerCase().includes(q));
+    return list.filter((i) => i.name.toLowerCase().includes(q));
   }, [items, params.name]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / params.perPage));
@@ -54,6 +56,10 @@ export function MenuItemTable() {
     debounceMs: 400,
     initialState: { columnPinning: { right: ['actions'] } }
   });
+
+  if (isPending) {
+    return <DataTableSkeleton columnCount={5} filterCount={1} />;
+  }
 
   return (
     <DataTable table={table}>
