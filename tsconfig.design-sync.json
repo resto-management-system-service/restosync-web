@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "paths": {
+      "next/image": ["./.design-sync/stubs/next-image.tsx"],
+      "next/link": ["./.design-sync/stubs/next-link.tsx"],
+      "next/navigation": ["./.design-sync/stubs/next-navigation.ts"]
+    }
+  }
+}
