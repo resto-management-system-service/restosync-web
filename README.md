@@ -20,26 +20,30 @@ Bootstrapped from the [`next-shadcn-dashboard-starter`](https://github.com/Kiran
 
 - **Node 22** — `.nvmrc` pins `22`. If you use **asdf**, run `ASDF_NODEJS_VERSION=22 pnpm dev` or set it in your shell before running any commands.
 - **pnpm 9** — enable via Corepack: `corepack enable`
-- **restosync-api running** — the API must be up on `http://localhost:3000/api`. See the [API repo](../restosync-api/README.md) to start it.
+- **an API to talk to** — one of:
+  - **cloud** (default): `NEXT_PUBLIC_API_URL=https://restosync-api.fly.dev/api` — the shared dev env, auto-deployed from `restosync-api` main. Nothing to run locally.
+  - **full-stack local**: run `restosync-api` (`npm run start:dev`) and set `NEXT_PUBLIC_API_URL=http://localhost:3000/api`. See the [API repo](../restosync-api/README.md).
+  - **mocks**: set `NEXT_PUBLIC_ENABLE_MSW=true` to serve an in-browser MSW mock API — offline work, deterministic demos.
 
 ## Getting started
 
 ```bash
 pnpm install
-cp env.example.txt .env.local   # fill in Clerk keys or leave empty for keyless mode
-PORT=3001 pnpm dev              # http://localhost:3001
+cp env.example.txt .env.local   # cloud API by default; fill Clerk keys or leave empty for keyless mode
+pnpm dev                        # http://localhost:3000
 ```
 
-> **Port note:** the API runs on `localhost:3000`, so the web dev server must use a different port (e.g. `3001`). `NEXT_PUBLIC_API_URL` in `.env.local` already points to `http://localhost:3000/api`.
+> **Port note:** if you run `restosync-api` locally it also uses `localhost:3000` — start the web on another port then: `PORT=3001 pnpm dev` and point `NEXT_PUBLIC_API_URL` at `http://localhost:3000/api`.
 
 ### Environment variables (`.env.local`)
 
-| Variable                                                 | Purpose                                                                                                                                                                                                    |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | Clerk keys. **Leave empty to use Clerk keyless mode** — the app boots immediately and a popup lets you claim it later. For real keys, create an app at [dashboard.clerk.com](https://dashboard.clerk.com). |
-| `NEXT_PUBLIC_CLERK_*_URL`                                | Sign-in / sign-up / post-auth redirect routes.                                                                                                                                                             |
-| `NEXT_PUBLIC_SENTRY_DISABLED`                            | Any non-empty value disables Sentry. Kept `true` locally. To enable Sentry, clear it and set `NEXT_PUBLIC_SENTRY_DSN` / `_ORG` / `_PROJECT`.                                                               |
-| `NEXT_PUBLIC_API_URL`                                    | Base URL the generated API client targets. Defaults to `http://localhost:3000/api`. See [API client](#api-client-generated).                                                                               |
+| Variable                                                 | Purpose                                                                                                                                                                                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | Clerk keys. **Leave empty to use Clerk keyless mode** — the app boots immediately and a popup lets you claim it later. For real keys, create an app at [dashboard.clerk.com](https://dashboard.clerk.com).                                 |
+| `NEXT_PUBLIC_CLERK_*_URL`                                | Sign-in / sign-up / post-auth redirect routes.                                                                                                                                                                                             |
+| `NEXT_PUBLIC_SENTRY_DISABLED`                            | Any non-empty value disables Sentry. Kept `true` locally. To enable Sentry, clear it and set `NEXT_PUBLIC_SENTRY_DSN` / `_ORG` / `_PROJECT`.                                                                                               |
+| `NEXT_PUBLIC_API_URL`                                    | Base URL the generated API client targets — **must include `/api`**. `https://restosync-api.fly.dev/api` (cloud) or `http://localhost:3000/api` (local). Defaults to `http://localhost:3000/api`. See [API client](#api-client-generated). |
+| `NEXT_PUBLIC_ENABLE_MSW`                                 | `true` → serve the in-browser MSW mock API instead of `NEXT_PUBLIC_API_URL`. Default off.                                                                                                                                                  |
 
 ## Scripts
 

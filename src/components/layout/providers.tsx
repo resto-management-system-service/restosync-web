@@ -2,6 +2,7 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import React from 'react';
 import { AUTH_DISABLED } from '@/lib/auth';
+import { ApiSessionGate } from '@/components/api-session-gate';
 import { MockGate } from '@/components/mock-gate';
 import { ActiveThemeProvider } from '../themes/active-theme';
 import QueryProvider from './query-provider';
@@ -32,7 +33,9 @@ export default function Providers({
 }) {
   const app = (
     <MockGate>
-      <QueryProvider>{children}</QueryProvider>
+      <ApiSessionGate>
+        <QueryProvider>{children}</QueryProvider>
+      </ApiSessionGate>
     </MockGate>
   );
 

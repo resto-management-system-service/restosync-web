@@ -34,12 +34,23 @@ const ITEM_KEYS = [
 export const menuItemsHandlers = [
   http.get(`${API_URL}/menu/items`, ({ request }) => {
     const url = new URL(request.url);
+    const name = url.searchParams.get('name');
     const categoryId = url.searchParams.get('categoryId');
     const available = url.searchParams.get('available');
+    const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+    const limit = Math.max(1, Number(url.searchParams.get('limit')) || 20);
+
     let items = [...db.items];
+    if (name) items = items.filter((i) => i.name.toLowerCase().includes(name.toLowerCase()));
     if (categoryId) items = items.filter((i) => i.categoryId === categoryId);
     if (available != null) items = items.filter((i) => i.available === (available === 'true'));
-    return HttpResponse.json(items);
+
+    const total = items.length;
+    const start = (page - 1) * limit;
+    return HttpResponse.json({
+      data: items.slice(start, start + limit),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 0 }
+    });
   }),
 
   http.get(`${API_URL}/menu/items/:id`, ({ params }) => {

@@ -1,10 +1,13 @@
 # MSW mock backend
 
-Mocks the RestoSync `/menu` API while the real backend is not deployed. Serves:
+Mocks the RestoSync `/menu` API. Serves:
 
-- the browser during `next dev` — `browser.ts` → `setupWorker`, started by
-  `src/components/mock-gate.tsx` (which blocks the first render until the worker is ready)
+- the browser during `next dev` — **only when `NEXT_PUBLIC_ENABLE_MSW=true`** —
+  `browser.ts` → `setupWorker`, started by `src/components/mock-gate.tsx` (which
+  blocks the first render until the worker is ready). Default is off: the app
+  calls the real API at `NEXT_PUBLIC_API_URL`.
 - the Vitest suite — `server.ts` → `setupServer`, started from `vitest.setup.ts`
+  (always, independent of the flag)
 
 The menu feature fetches **only on the client** (`useQuery`, no server prefetch): the
 mock DB lives in the browser tab's memory, so client-only fetching keeps
@@ -39,7 +42,10 @@ etc.), so contract drift surfaces as a `422` (and a failing test).
 - `DELETE /menu/categories/:id` returns `409` when menu items still reference it.
 - `POST`/`PATCH /menu/items` returns `400` when `categoryId` does not exist.
 
-## Removing it when the real API ships
+## Retiring it fully
+
+The browser layer is already opt-in (`NEXT_PUBLIC_ENABLE_MSW`), so it stays out
+of the way once the real `/menu` endpoints exist. To remove it entirely:
 
 1. Delete `src/components/mock-gate.tsx` and drop `<MockGate>` from
    `src/components/layout/providers.tsx`.
