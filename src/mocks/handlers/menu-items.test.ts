@@ -5,19 +5,27 @@ const BASE = 'http://localhost:3000/api';
 const UNKNOWN_UUID = '00000000-0000-4000-8000-000000000000';
 
 describe('menu-items handlers', () => {
-  it('GET /menu/items returns the seeded array', async () => {
+  it('GET /menu/items returns a paginated envelope', async () => {
     const res = await fetch(`${BASE}/menu/items`);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBeGreaterThan(0);
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data.length).toBeGreaterThan(0);
+    expect(body.meta.total).toBeGreaterThanOrEqual(body.data.length);
   });
 
   it('GET /menu/items?categoryId filters', async () => {
     const cid = db.categories[0].id;
-    const filtered = await (await fetch(`${BASE}/menu/items?categoryId=${cid}`)).json();
-    expect(filtered.length).toBeGreaterThan(0);
-    expect(filtered.every((i: { categoryId: string }) => i.categoryId === cid)).toBe(true);
+    const { data } = await (await fetch(`${BASE}/menu/items?categoryId=${cid}`)).json();
+    expect(data.length).toBeGreaterThan(0);
+    expect(data.every((i: { categoryId: string }) => i.categoryId === cid)).toBe(true);
+  });
+
+  it('GET /menu/items?page=2&limit=2 slices', async () => {
+    const all = (await (await fetch(`${BASE}/menu/items?limit=100`)).json()).data;
+    const p2 = await (await fetch(`${BASE}/menu/items?page=2&limit=2`)).json();
+    expect(p2.data).toEqual(all.slice(2, 4));
+    expect(p2.meta.page).toBe(2);
   });
 
   it('POST /menu/items with a malformed body returns 422', async () => {

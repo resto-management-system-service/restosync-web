@@ -38,7 +38,9 @@ export function DataTablePagination<TData>({
             {table.getFilteredRowModel().rows.length} row(s) selected.
           </>
         ) : (
-          <>{table.getFilteredRowModel().rows.length} row(s) total.</>
+          // getRowCount() honours a manual `rowCount` (server-side pagination);
+          // falls back to the client row count otherwise.
+          <>{table.getRowCount()} row(s) total.</>
         )}
       </div>
       <div className='flex items-center gap-2 sm:gap-6 lg:gap-8'>

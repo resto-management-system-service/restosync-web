@@ -40,6 +40,12 @@ export interface Category {
 
 // Filters for listing menu items
 export interface MenuItemFilters {
+  name?: string;
   categoryId?: string;
   available?: boolean;
+}
+
+export interface MenuItemPage {
+  items: MenuItem[];
+  total: number;
 }

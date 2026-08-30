@@ -27,10 +27,15 @@ export function MenuItemTable() {
   const { data: categories } = useQuery(categoriesQueryOptions());
 
   const filters: MenuItemFilters = {
+    ...(params.name ? { name: params.name } : {}),
     ...(params.categoryId ? { categoryId: params.categoryId } : {}),
     ...(params.available ? { available: params.available === 'true' } : {})
   };
-  const { data: items, isPending } = useQuery(menuItemsQueryOptions(filters));
+  const { data, isPending } = useQuery(
+    menuItemsQueryOptions({ filters, page: params.page, perPage: params.perPage })
+  );
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   const categoryName = useMemo(() => {
     const map = new Map((categories ?? []).map((c) => [c.id, c.name]));
@@ -39,19 +44,13 @@ export function MenuItemTable() {
 
   const columns = useMemo(() => buildColumns(categoryName), [categoryName]);
 
-  const filtered = useMemo(() => {
-    const list = items ?? [];
-    if (!params.name) return list;
-    const q = params.name.toLowerCase();
-    return list.filter((i) => i.name.toLowerCase().includes(q));
-  }, [items, params.name]);
-
-  const pageCount = Math.max(1, Math.ceil(filtered.length / params.perPage));
+  const pageCount = Math.max(1, Math.ceil(total / params.perPage));
 
   const { table } = useDataTable({
-    data: filtered,
+    data: items,
     columns,
     pageCount,
+    rowCount: total,
     shallow: true,
     debounceMs: 400,
     initialState: { columnPinning: { right: ['actions'] } }
