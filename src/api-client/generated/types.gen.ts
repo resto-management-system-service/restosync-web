@@ -395,7 +395,10 @@ export type AuthControllerMeResponses = {
 export type UsersControllerFindAllData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        page?: number;
+        limit?: number;
+    };
     url: '/users';
 };
 
@@ -481,6 +484,8 @@ export type MenuItemsControllerFindAllData = {
     body?: never;
     path?: never;
     query?: {
+        page?: number;
+        limit?: number;
         /**
          * Filter by product name (case-insensitive)
          */
@@ -655,7 +660,10 @@ export type ModifiersControllerUpdateModifierResponses = {
 export type OrdersControllerFindAllData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        page?: number;
+        limit?: number;
+    };
     url: '/orders';
 };
 
@@ -1470,6 +1478,8 @@ export type ReservationsControllerFindAllData = {
     body?: never;
     path?: never;
     query?: {
+        page?: number;
+        limit?: number;
         status?: 'PENDING' | 'CONFIRMED' | 'SEATED' | 'NO_SHOW' | 'CANCELLED';
         /**
          * Filter by reservedFor date (YYYY-MM-DD)
