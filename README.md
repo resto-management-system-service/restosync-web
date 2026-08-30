@@ -29,9 +29,11 @@ cp env.example.txt .env.local
 pnpm dev                        # http://localhost:3000
 ```
 
-`env.example.txt` defaults to the **cloud** API. Pick a mode below, then
-`pnpm dev`. Auth is bypassed locally (`NEXT_PUBLIC_DISABLE_AUTH=true`) — the app
-drops straight into the dashboard with a mock user.
+That's it — `env.example.txt` works out of the box: **cloud** API, auth
+bypassed (`NEXT_PUBLIC_DISABLE_AUTH=true`, mock user), dev API login on so menu
+CRUD works. Nothing secret to fill in — Clerk stays in keyless mode and the API
+uses seeded demo credentials. Switch modes below if you want the API local or
+MSW mocks.
 
 ## Running modes
 
