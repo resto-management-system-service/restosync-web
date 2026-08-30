@@ -217,6 +217,11 @@ export const zAuthControllerRefreshBody = zRefreshDto;
 
 export const zAuthControllerLogoutResponse = z.void();
 
+export const zUsersControllerFindAllQuery = z.object({
+    page: z.number().gte(1).optional().default(1),
+    limit: z.number().gte(1).lte(100).optional().default(20)
+});
+
 export const zUsersControllerFindOnePath = z.object({
     id: z.string()
 });
@@ -238,6 +243,8 @@ export const zCategoriesControllerUpdatePath = z.object({
 });
 
 export const zMenuItemsControllerFindAllQuery = z.object({
+    page: z.number().gte(1).optional().default(1),
+    limit: z.number().gte(1).lte(100).optional().default(20),
     name: z.string().optional(),
     categoryId: z.uuid().optional(),
     available: z.boolean().optional()
@@ -297,6 +304,11 @@ export const zModifiersControllerUpdateModifierBody = zUpdateModifierDto;
 
 export const zModifiersControllerUpdateModifierPath = z.object({
     modifierId: z.string()
+});
+
+export const zOrdersControllerFindAllQuery = z.object({
+    page: z.number().gte(1).optional().default(1),
+    limit: z.number().gte(1).lte(100).optional().default(20)
 });
 
 export const zOrdersControllerCreateBody = zCreateOrderDto;
@@ -434,6 +446,8 @@ export const zTablesControllerUpdatePath = z.object({
 });
 
 export const zReservationsControllerFindAllQuery = z.object({
+    page: z.number().gte(1).optional().default(1),
+    limit: z.number().gte(1).lte(100).optional().default(20),
     status: z.enum([
         'PENDING',
         'CONFIRMED',
