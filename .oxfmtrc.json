@@ -20,7 +20,10 @@
     "src/api-client/openapi.json",
     "public/mockServiceWorker.js",
     "pnpm-lock.yaml",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    ".design-sync/**",
+    ".ds-sync/**",
+    "ds-bundle/**"
   ],
   "overrides": [
     {
