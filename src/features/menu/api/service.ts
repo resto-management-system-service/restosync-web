@@ -34,8 +34,14 @@ export async function getMenuItems(filters?: MenuItemFilters): Promise<MenuItem[
     throw new Error(`Failed to fetch menu items: ${JSON.stringify(error)}`);
   }
 
-  // Cast the 'unknown' response from OpenAPI to our concrete type
-  return (data as MenuItem[]) ?? [];
+  // The OpenAPI response is typed `unknown`. The real API returns a paginated
+  // envelope `{ data, meta }`; tolerate a bare array too (MSW mock / older API).
+  // NOTE: the API defaults to 20 items/page. The table paginates client-side,
+  // so it only sees the first page until the client is regenerated with the
+  // pagination query params and server-side paging is wired.
+  if (Array.isArray(data)) return data as MenuItem[];
+  const page = (data as { data?: unknown } | null)?.data;
+  return Array.isArray(page) ? (page as MenuItem[]) : [];
 }
 
 /**
