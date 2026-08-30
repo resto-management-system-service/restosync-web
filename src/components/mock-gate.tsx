@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 
-const MOCKING = process.env.NODE_ENV === 'development';
+// Opt-in. Set NEXT_PUBLIC_ENABLE_MSW=true to run against the in-browser MSW
+// mock API instead of NEXT_PUBLIC_API_URL — offline work, deterministic demos.
+// Unset/false (the default) → the app calls the real API.
+const MOCKING = process.env.NEXT_PUBLIC_ENABLE_MSW === 'true';
 
 /**
- * Starts the MSW browser worker before rendering the app in development, so the
- * first data fetch is already intercepted (no hang against the real API URL).
- * In production this is a pass-through. Remove with the rest of the mock layer
- * once the real API is live — see src/mocks/README.md.
+ * When mocking is enabled, starts the MSW browser worker before rendering the
+ * app so the first data fetch is already intercepted. Otherwise a pass-through.
+ * See src/mocks/README.md.
  */
 export function MockGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(!MOCKING);
