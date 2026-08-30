@@ -20,20 +20,34 @@ Bootstrapped from the [`next-shadcn-dashboard-starter`](https://github.com/Kiran
 
 - **Node 22** — `.nvmrc` pins `22`. If you use **asdf**, run `ASDF_NODEJS_VERSION=22 pnpm dev` or set it in your shell before running any commands.
 - **pnpm 9** — enable via Corepack: `corepack enable`
-- **an API to talk to** — one of:
-  - **cloud** (default): `NEXT_PUBLIC_API_URL=https://restosync-api.fly.dev/api` — the shared dev env, auto-deployed from `restosync-api` main. Nothing to run locally.
-  - **full-stack local**: run `restosync-api` (`npm run start:dev`) and set `NEXT_PUBLIC_API_URL=http://localhost:3000/api`. See the [API repo](../restosync-api/README.md).
-  - **mocks**: set `NEXT_PUBLIC_ENABLE_MSW=true` to serve an in-browser MSW mock API — offline work, deterministic demos.
 
 ## Getting started
 
 ```bash
 pnpm install
-cp env.example.txt .env.local   # cloud API by default; fill Clerk keys or leave empty for keyless mode
+cp env.example.txt .env.local
 pnpm dev                        # http://localhost:3000
 ```
 
-> **Port note:** if you run `restosync-api` locally it also uses `localhost:3000` — start the web on another port then: `PORT=3001 pnpm dev` and point `NEXT_PUBLIC_API_URL` at `http://localhost:3000/api`.
+`env.example.txt` defaults to the **cloud** API. Pick a mode below, then
+`pnpm dev`. Auth is bypassed locally (`NEXT_PUBLIC_DISABLE_AUTH=true`) — the app
+drops straight into the dashboard with a mock user.
+
+## Running modes
+
+| Mode                 | What runs                                | `.env.local`                                                                                                                             |
+| -------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cloud** (default)  | nothing — hits the shared dev API on Fly | `NEXT_PUBLIC_API_URL=https://restosync-api.fly.dev/api`<br>`NEXT_PUBLIC_DEV_API_LOGIN=true`                                              |
+| **Full-stack local** | `restosync-api` on `localhost:3000`      | `NEXT_PUBLIC_API_URL=http://localhost:3000/api`<br>`NEXT_PUBLIC_DEV_API_LOGIN=true`<br>run the web on another port: `PORT=3001 pnpm dev` |
+| **Mocks (MSW)**      | nothing — in-browser mock API            | `NEXT_PUBLIC_ENABLE_MSW=true` (URL/login ignored)                                                                                        |
+
+- **Cloud / local** need `NEXT_PUBLIC_DEV_API_LOGIN=true` for **writes** (create /
+  edit / delete). It auto-logs-in with seeded credentials
+  (`admin@restosync.local` / `Admin123!`) and attaches a bearer token to every
+  request. Reads work without it. **Dev only — never set it in a deployed env.**
+- The **cloud** API sleeps when idle; the first request after a wake takes
+  ~10 s and can fail once — retry and it works.
+- To start the API locally + seed it, see the [API repo](../restosync-api/README.md).
 
 ### Environment variables (`.env.local`)
 
@@ -41,9 +55,11 @@ pnpm dev                        # http://localhost:3000
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | Clerk keys. **Leave empty to use Clerk keyless mode** — the app boots immediately and a popup lets you claim it later. For real keys, create an app at [dashboard.clerk.com](https://dashboard.clerk.com).                                 |
 | `NEXT_PUBLIC_CLERK_*_URL`                                | Sign-in / sign-up / post-auth redirect routes.                                                                                                                                                                                             |
+| `NEXT_PUBLIC_DISABLE_AUTH`                               | `true` → skip the Clerk login gate entirely; the app renders with a mock user. Local only.                                                                                                                                                 |
 | `NEXT_PUBLIC_SENTRY_DISABLED`                            | Any non-empty value disables Sentry. Kept `true` locally. To enable Sentry, clear it and set `NEXT_PUBLIC_SENTRY_DSN` / `_ORG` / `_PROJECT`.                                                                                               |
 | `NEXT_PUBLIC_API_URL`                                    | Base URL the generated API client targets — **must include `/api`**. `https://restosync-api.fly.dev/api` (cloud) or `http://localhost:3000/api` (local). Defaults to `http://localhost:3000/api`. See [API client](#api-client-generated). |
 | `NEXT_PUBLIC_ENABLE_MSW`                                 | `true` → serve the in-browser MSW mock API instead of `NEXT_PUBLIC_API_URL`. Default off.                                                                                                                                                  |
+| `NEXT_PUBLIC_DEV_API_LOGIN`                              | `true` → auto-login to the API with seeded creds and attach a bearer token to every request (needed for writes). `NEXT_PUBLIC_DEV_API_EMAIL` / `NEXT_PUBLIC_DEV_API_PASSWORD` override the defaults. **Dev only.**                         |
 
 ## Scripts
 
