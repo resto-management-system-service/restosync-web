@@ -13,7 +13,10 @@
     "next-env.d.ts",
     "scripts/**",
     "src/api-client/generated/**",
-    "public/mockServiceWorker.js"
+    "public/mockServiceWorker.js",
+    ".design-sync/**",
+    ".ds-sync/**",
+    "ds-bundle/**"
   ],
   "settings": {
     "jsx-a11y": {
@@ -28,25 +31,44 @@
     "suspicious": "warn"
   },
   "rules": {
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-console": [
+      "warn",
+      {
+        "allow": ["warn", "error"]
+      }
+    ],
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
     "no-unused-expressions": "warn",
     "@typescript-eslint/no-explicit-any": "warn",
-
     "react/react-in-jsx-scope": "off",
     "react/no-unknown-property": "off",
     "react/jsx-no-target-blank": "off",
     "react/no-children-prop": "off",
-    "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
+    "react/no-unstable-nested-components": [
+      "warn",
+      {
+        "allowAsProps": true
+      }
+    ],
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
     "unicorn/consistent-function-scoping": "off",
-
     "no-shadow": "off",
     "import/no-anonymous-default-export": "warn",
     "import/no-unassigned-import": "off",
-
-    "jsx-a11y/alt-text": ["warn", { "elements": ["img"], "img": ["Image"] }],
+    "jsx-a11y/alt-text": [
+      "warn",
+      {
+        "elements": ["img"],
+        "img": ["Image"]
+      }
+    ],
     "jsx-a11y/aria-props": "warn",
     "jsx-a11y/aria-proptypes": "warn",
     "jsx-a11y/aria-unsupported-elements": "warn",
