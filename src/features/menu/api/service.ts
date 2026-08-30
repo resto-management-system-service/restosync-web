@@ -17,16 +17,22 @@ import {
   type CreateCategoryDto,
   type UpdateCategoryDto
 } from '@/api-client';
-import type { MenuItem, Category, MenuItemFilters } from './types';
+import type { MenuItem, Category, MenuItemFilters, MenuItemPage } from './types';
 
 /**
- * Fetch all menu items, optionally filtered by category or availability.
+ * Fetch one page of menu items. Filtering and pagination are server-side.
  */
-export async function getMenuItems(filters?: MenuItemFilters): Promise<MenuItem[]> {
+export async function getMenuItems(
+  filters: MenuItemFilters = {},
+  paging: { page?: number; perPage?: number } = {}
+): Promise<MenuItemPage> {
   const { data, error } = await menuItemsControllerFindAll({
     query: {
-      categoryId: filters?.categoryId,
-      available: filters?.available
+      name: filters.name || undefined,
+      categoryId: filters.categoryId,
+      available: filters.available,
+      page: paging.page,
+      limit: paging.perPage
     }
   });
 
@@ -35,13 +41,13 @@ export async function getMenuItems(filters?: MenuItemFilters): Promise<MenuItem[
   }
 
   // The OpenAPI response is typed `unknown`. The real API returns a paginated
-  // envelope `{ data, meta }`; tolerate a bare array too (MSW mock / older API).
-  // NOTE: the API defaults to 20 items/page. The table paginates client-side,
-  // so it only sees the first page until the client is regenerated with the
-  // pagination query params and server-side paging is wired.
-  if (Array.isArray(data)) return data as MenuItem[];
-  const page = (data as { data?: unknown } | null)?.data;
-  return Array.isArray(page) ? (page as MenuItem[]) : [];
+  // envelope `{ data, meta }`; tolerate a bare array too (older API / a mock).
+  if (Array.isArray(data)) {
+    return { items: data as MenuItem[], total: data.length };
+  }
+  const envelope = data as { data?: unknown; meta?: { total?: number } } | null;
+  const items = Array.isArray(envelope?.data) ? (envelope.data as MenuItem[]) : [];
+  return { items, total: envelope?.meta?.total ?? items.length };
 }
 
 /**

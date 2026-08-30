@@ -15,19 +15,20 @@ beforeEach(() => resetDb());
 
 describe('menu item service', () => {
   it('lists seeded items', async () => {
-    const items = await getMenuItems();
+    const { items, total } = await getMenuItems();
     expect(items.length).toBeGreaterThan(0);
+    expect(total).toBeGreaterThanOrEqual(items.length);
   });
 
   it('filters by categoryId', async () => {
     const cid = db.categories[0].id;
-    const items = await getMenuItems({ categoryId: cid });
+    const { items } = await getMenuItems({ categoryId: cid });
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((i) => i.categoryId === cid)).toBe(true);
   });
 
   it('filters by availability', async () => {
-    const items = await getMenuItems({ available: true });
+    const { items } = await getMenuItems({ available: true });
     expect(items.every((i) => i.available)).toBe(true);
   });
 
@@ -52,13 +53,17 @@ describe('menu item service', () => {
   });
 
   it('updates an item', async () => {
-    const [first] = await getMenuItems();
+    const {
+      items: [first]
+    } = await getMenuItems();
     const updated = await updateMenuItem(first.id, { priceCents: 4242 });
     expect(updated.priceCents).toBe(4242);
   });
 
   it('deletes an item', async () => {
-    const [first] = await getMenuItems();
+    const {
+      items: [first]
+    } = await getMenuItems();
     await deleteMenuItem(first.id);
     await expect(getMenuItemById(first.id)).rejects.toThrow();
   });

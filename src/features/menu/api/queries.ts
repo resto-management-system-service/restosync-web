@@ -10,18 +10,20 @@ import type { MenuItemFilters } from './types';
 // hydrated data immediately stale makes the client refetch from the browser store
 // on mount, so what you see always matches the store your mutations write to.
 
+type ItemsQueryArgs = { filters?: MenuItemFilters; page?: number; perPage?: number };
+
 export const menuKeys = {
   all: ['menu'] as const,
-  items: (filters: MenuItemFilters) => [...menuKeys.all, 'items', filters] as const,
+  items: (args: ItemsQueryArgs) => [...menuKeys.all, 'items', args] as const,
   detail: (id: string) => [...menuKeys.all, 'detail', id] as const,
   categories: () => [...menuKeys.all, 'categories'] as const,
   category: (id: string) => [...menuKeys.all, 'category', id] as const
 };
 
-export const menuItemsQueryOptions = (filters: MenuItemFilters = {}) =>
+export const menuItemsQueryOptions = ({ filters = {}, page, perPage }: ItemsQueryArgs = {}) =>
   queryOptions({
-    queryKey: menuKeys.items(filters),
-    queryFn: () => getMenuItems(filters),
+    queryKey: menuKeys.items({ filters, page, perPage }),
+    queryFn: () => getMenuItems(filters, { page, perPage }),
     staleTime: 0
   });
 
