@@ -107,18 +107,18 @@ export function installApiSession(): void {
   if (!ENABLED || installed) return;
   installed = true;
 
-  client.interceptors.request.use(async (request) => {
-    if (new URL(request.url).pathname.endsWith('/auth/login')) return request;
-    if (new URL(request.url).pathname.endsWith('/auth/refresh')) return request;
+  client.interceptors.request.use(async (outbound) => {
+    const path = new URL(outbound.url).pathname;
+    if (path.endsWith('/auth/login') || path.endsWith('/auth/refresh')) return outbound;
     const session = await ensureApiSession();
-    if (session) request.headers.set('Authorization', `Bearer ${session.accessToken}`);
-    return request;
+    if (session) outbound.headers.set('Authorization', `Bearer ${session.accessToken}`);
+    return outbound;
   });
 
-  client.interceptors.response.use((response) => {
+  client.interceptors.response.use((incoming) => {
     // Backstop: a 401 means the token is no longer trusted — drop it so the
     // next call re-authenticates from scratch.
-    if (response.status === 401) write(null);
-    return response;
+    if (incoming.status === 401) write(null);
+    return incoming;
   });
 }
