@@ -7,9 +7,10 @@ import {
   deleteTable,
   getTables,
   getZones,
+  updateTable,
   updateTableLayout
 } from './service';
-import type { CreateTableInput } from './types';
+import type { CreateTableInput, UpdateTableInput } from './types';
 
 // ============================================================
 // Tables Query Key Factory, Query Options & Mutation Options
@@ -45,6 +46,11 @@ export const createTableMutation = mutationOptions({
 export const updateTableLayoutMutation = mutationOptions({
   mutationFn: ({ id, layout }: { id: string; layout: UpdateTableLayoutDto }) =>
     updateTableLayout(id, layout),
+  onSettled: invalidateAll
+});
+
+export const updateTableMutation = mutationOptions({
+  mutationFn: ({ id, input }: { id: string; input: UpdateTableInput }) => updateTable(id, input),
   onSettled: invalidateAll
 });
 

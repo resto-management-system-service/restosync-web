@@ -1,5 +1,6 @@
 import type {
   CreateTableDto,
+  UpdateTableDto,
   UpdateTableLayoutDto,
   CreateZoneDto,
   UpdateZoneDto
@@ -13,7 +14,7 @@ import type {
 // schemas), so `Table`/`Zone` below mirror the Prisma models the API returns.
 
 // Re-export the request DTOs from the generated client.
-export type { CreateTableDto, UpdateTableLayoutDto, CreateZoneDto, UpdateZoneDto };
+export type { CreateTableDto, UpdateTableDto, UpdateTableLayoutDto, CreateZoneDto, UpdateZoneDto };
 
 export type TableShape = 'rounded' | 'square' | 'circle';
 export type TableStatus = 'AVAILABLE' | 'RESERVED' | 'OCCUPIED';
@@ -54,4 +55,10 @@ export interface CreateTableInput {
   capacity: number;
   shape: TableShape;
   zoneId: string;
+}
+
+/** Fields editable via PATCH /tables/:id (name + capacity only; shape is layout-only). */
+export interface UpdateTableInput {
+  name: string;
+  capacity: number;
 }

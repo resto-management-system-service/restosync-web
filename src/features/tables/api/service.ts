@@ -5,12 +5,13 @@ import {
   tablesControllerCreate,
   tablesControllerFindAll,
   tablesControllerRemove,
+  tablesControllerUpdate,
   tablesControllerUpdateLayout,
   zonesControllerCreate,
   zonesControllerFindAll,
   type UpdateTableLayoutDto
 } from '@/api-client';
-import type { CreateTableInput, Table, Zone } from './types';
+import type { CreateTableInput, Table, UpdateTableInput, Zone } from './types';
 
 /** Default placement (percentages, canvas center) for a newly created table. */
 const DEFAULT_LAYOUT: UpdateTableLayoutDto = {
@@ -92,6 +93,22 @@ export async function deleteTable(id: string): Promise<void> {
   if (error) {
     throw new Error(`Failed to delete table: ${JSON.stringify(error)}`);
   }
+}
+
+/**
+ * Update a table's name/capacity via PATCH /tables/:id.
+ */
+export async function updateTable(id: string, input: UpdateTableInput): Promise<Table> {
+  const { data, error } = await tablesControllerUpdate({
+    path: { id },
+    body: { name: input.name, capacity: input.capacity }
+  });
+
+  if (error) {
+    throw new Error(`Failed to update table: ${JSON.stringify(error)}`);
+  }
+
+  return data as Table;
 }
 
 /**

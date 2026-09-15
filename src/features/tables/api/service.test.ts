@@ -4,6 +4,7 @@ const api = vi.hoisted(() => ({
   tablesControllerFindAll: vi.fn(),
   tablesControllerCreate: vi.fn(),
   tablesControllerRemove: vi.fn(),
+  tablesControllerUpdate: vi.fn(),
   tablesControllerUpdateLayout: vi.fn(),
   zonesControllerFindAll: vi.fn(),
   zonesControllerCreate: vi.fn()
@@ -17,6 +18,7 @@ import {
   deleteTable,
   getTables,
   getZones,
+  updateTable,
   updateTableLayout
 } from './service';
 
@@ -94,6 +96,17 @@ describe('tables service', () => {
     await deleteTable('t1');
 
     expect(api.tablesControllerRemove).toHaveBeenCalledWith({ path: { id: 't1' } });
+  });
+
+  it('updateTable calls tablesControllerUpdate with path + name/capacity body', async () => {
+    api.tablesControllerUpdate.mockResolvedValue({ data: { id: 't1' }, error: undefined });
+
+    await updateTable('t1', { name: 'T1-A', capacity: 8 });
+
+    expect(api.tablesControllerUpdate).toHaveBeenCalledWith({
+      path: { id: 't1' },
+      body: { name: 'T1-A', capacity: 8 }
+    });
   });
 
   it('createZone calls zonesControllerCreate with name', async () => {

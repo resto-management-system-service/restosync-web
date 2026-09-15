@@ -12,11 +12,13 @@ import {
   SheetTitle
 } from '@/components/ui/sheet';
 import * as z from 'zod';
-import { createTableMutation } from '../api/tables.queries';
+import type { Table } from '../api/types';
+import { createTableMutation, updateTableMutation } from '../api/tables.queries';
 import {
   tableLayoutFormDefaults,
   tableLayoutFormSchema,
   toCreateTableInput,
+  toUpdateTableInput,
   type TableLayoutFormValues
 } from '../schemas/table-layout';
 
@@ -36,10 +38,22 @@ const shapeOptions = [
 interface AddTableSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** null → create a new table; a Table → edit that table's name/capacity. */
+  table: Table | null;
   zoneId: string;
 }
 
-export default function AddTableSheet({ open, onOpenChange, zoneId }: AddTableSheetProps) {
+export default function AddTableSheet({ open, onOpenChange, table, zoneId }: AddTableSheetProps) {
+  const isEdit = table !== null;
+
+  const defaultValues: TableLayoutFormValues = isEdit
+    ? {
+        name: table.name,
+        capacity: String(table.capacity ?? 4) as TableLayoutFormValues['capacity'],
+        shape: table.shape ?? 'circle'
+      }
+    : tableLayoutFormDefaults;
+
   const createMutation = useMutation({
     ...createTableMutation,
     onSuccess: () => {
@@ -48,22 +62,39 @@ export default function AddTableSheet({ open, onOpenChange, zoneId }: AddTableSh
     }
   });
 
+  const updateMutation = useMutation({
+    ...updateTableMutation,
+    onSuccess: () => {
+      onOpenChange(false);
+    }
+  });
+
   const form = useAppForm({
-    defaultValues: tableLayoutFormDefaults,
+    defaultValues,
     validators: { onSubmit: tableLayoutFormSchema },
     onSubmit: ({ value }) => {
-      createMutation.mutate(toCreateTableInput(value, zoneId));
+      if (isEdit && table) {
+        updateMutation.mutate({ id: table.id, input: toUpdateTableInput(value) });
+      } else {
+        createMutation.mutate(toCreateTableInput(value, zoneId));
+      }
     }
   });
 
   const { FormTextField, FormSelectField } = useFormFields<TableLayoutFormValues>();
 
+  const isPending = isEdit ? updateMutation.isPending : createMutation.isPending;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Agregar mesa</SheetTitle>
-          <SheetDescription>Configura la nueva mesa de esta zona.</SheetDescription>
+          <SheetTitle>{isEdit ? 'Editar mesa' : 'Agregar mesa'}</SheetTitle>
+          <SheetDescription>
+            {isEdit
+              ? 'Actualiza el nombre y la capacidad de la mesa.'
+              : 'Configura la nueva mesa de esta zona.'}
+          </SheetDescription>
         </SheetHeader>
 
         <form.AppForm>
@@ -76,7 +107,9 @@ export default function AddTableSheet({ open, onOpenChange, zoneId }: AddTableSh
               validators={{ onBlur: z.string().min(1, 'El nombre es requerido.') }}
             />
             <FormSelectField name='capacity' label='Capacidad' required options={capacityOptions} />
-            <FormSelectField name='shape' label='Forma' required options={shapeOptions} />
+            {!isEdit && (
+              <FormSelectField name='shape' label='Forma' required options={shapeOptions} />
+            )}
           </form.Form>
         </form.AppForm>
 
@@ -84,8 +117,8 @@ export default function AddTableSheet({ open, onOpenChange, zoneId }: AddTableSh
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button type='submit' form='add-table-form' isLoading={createMutation.isPending}>
-            Agregar
+          <Button type='submit' form='add-table-form' isLoading={isPending}>
+            {isEdit ? 'Guardar cambios' : 'Agregar'}
           </Button>
         </SheetFooter>
       </SheetContent>
