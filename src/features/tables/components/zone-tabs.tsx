@@ -1,7 +1,7 @@
 'use client';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Zone } from '../api/mock-data';
+import type { Zone } from '../api/types';
 import AddZoneInput from './add-zone-input';
 
 interface ZoneTabsProps {

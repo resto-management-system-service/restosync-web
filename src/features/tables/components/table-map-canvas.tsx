@@ -2,16 +2,34 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Layer, Rect, Stage } from 'react-konva';
-import type { TableLayout, TableLayoutUpdate } from '../api/mock-data';
+import type { UpdateTableLayoutDto } from '@/api-client';
+import type { Table } from '../api/types';
 import { percentToPixel, pixelToPercent } from '../lib/layout';
 import TableShape from './table-shape';
 
 interface TableMapCanvasProps {
-  tables: TableLayout[];
+  tables: Table[];
   editing: boolean;
-  onUpdateTable: (id: string, layout: TableLayoutUpdate) => void;
-  onSelectTable: (table: TableLayout) => void;
-  onDeleteRequest: (table: TableLayout) => void;
+  onUpdateTable: (id: string, layout: UpdateTableLayoutDto) => void;
+  onSelectTable: (table: Table) => void;
+  onDeleteRequest: (table: Table) => void;
+}
+
+/** A table is renderable only once it has a position and size. */
+type PlacedTable = Table & {
+  positionX: number;
+  positionY: number;
+  width: number;
+  height: number;
+};
+
+function isPlaced(table: Table): table is PlacedTable {
+  return (
+    table.positionX !== null &&
+    table.positionY !== null &&
+    table.width !== null &&
+    table.height !== null
+  );
 }
 
 export default function TableMapCanvas({
@@ -68,13 +86,15 @@ export default function TableMapCanvas({
     [onUpdateTable, size]
   );
 
+  const placedTables = tables.filter(isPlaced);
+
   return (
     <div ref={containerRef} className='relative h-full min-h-[400px] w-full overflow-hidden'>
       {size.width > 0 && size.height > 0 && (
         <Stage width={size.width} height={size.height}>
           <Layer>
             <Rect width={size.width} height={size.height} fill='#f8fafc' listening={false} />
-            {tables.map((table) => {
+            {placedTables.map((table) => {
               const override =
                 resizeOverride && resizeOverride.id === table.id ? resizeOverride : null;
               return (

@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { Circle, Group, Rect, Text } from 'react-konva';
-import type { TableLayout } from '../api/mock-data';
+import type { Table } from '../api/types';
 import { CHAIR_COLOR, CHAIR_RADIUS, STATUS_COLORS, chairOffsets } from '../lib/layout';
 
 const HANDLE_SIZE = 14;
 const MIN_SIZE_PX = 40;
 
 interface TableShapeProps {
-  table: TableLayout;
+  table: Table;
   x: number;
   y: number;
   width: number;
@@ -17,8 +17,8 @@ interface TableShapeProps {
   onDragEnd: (id: string, x: number, y: number) => void;
   onResize: (id: string, width: number, height: number) => void;
   onResizeEnd: (id: string, width: number, height: number) => void;
-  onSelect: (table: TableLayout) => void;
-  onDeleteRequest: (table: TableLayout) => void;
+  onSelect: (table: Table) => void;
+  onDeleteRequest: (table: Table) => void;
 }
 
 export default function TableShape({
@@ -44,7 +44,8 @@ export default function TableShape({
   }, [width, height]);
 
   const colors = STATUS_COLORS[table.status];
-  const chairs = chairOffsets(table.shape, table.capacity, width, height);
+  const shape = table.shape ?? 'rounded';
+  const chairs = chairOffsets(shape, table.capacity ?? 0, width, height);
   const labelFontSize = Math.max(11, Math.min(width, height) * 0.3);
 
   return (
@@ -60,7 +61,7 @@ export default function TableShape({
       }}
       onDragEnd={(e) => onDragEnd(table.id, e.target.x(), e.target.y())}
     >
-      {table.shape === 'round' ? (
+      {shape === 'circle' ? (
         <Circle
           x={width / 2}
           y={height / 2}
@@ -74,7 +75,7 @@ export default function TableShape({
         <Rect
           width={width}
           height={height}
-          cornerRadius={8}
+          cornerRadius={shape === 'rounded' ? 8 : 0}
           fill={colors.fill}
           stroke={colors.stroke}
           strokeWidth={2}

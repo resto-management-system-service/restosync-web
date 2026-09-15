@@ -4,15 +4,18 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { UpdateTableLayoutDto } from '@/api-client';
 import {
   deleteTableMutation,
-  tablesByZoneQueryOptions,
+  tablesQueryOptions,
   updateTableLayoutMutation,
   zonesQueryOptions
 } from '../api/tables.queries';
-import type { TableLayout, TableLayoutUpdate } from '../api/mock-data';
+import type { Table } from '../api/types';
 import AddTableSheet from './add-table-sheet';
 import DeleteTableDialog from './delete-table-dialog';
 import ZoneTabs from './zone-tabs';
@@ -23,16 +26,20 @@ const TableMapCanvas = dynamic(() => import('./table-map-canvas'), {
 });
 
 export default function FloorPlanView() {
-  const { data: zones = [] } = useQuery(zonesQueryOptions());
   const [activeZoneId, setActiveZoneId] = useState('');
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<TableLayout | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Table | null>(null);
+
+  const zonesQuery = useQuery(zonesQueryOptions());
+  const tablesQuery = useQuery(tablesQueryOptions());
+
+  const zones = zonesQuery.data ?? [];
+  const tables = tablesQuery.data ?? [];
 
   const activeZone = zones.find((z) => z.id === activeZoneId) ?? zones[0] ?? null;
   const effectiveZoneId = activeZone?.id ?? '';
-
-  const { data: tables = [] } = useQuery(tablesByZoneQueryOptions(effectiveZoneId));
+  const zoneTables = tables.filter((t) => t.zoneId === effectiveZoneId);
 
   const updateMutation = useMutation(updateTableLayoutMutation);
 
@@ -44,19 +51,30 @@ export default function FloorPlanView() {
     }
   });
 
-  const handleUpdateTable = (id: string, layout: TableLayoutUpdate) => {
+  const handleUpdateTable = (id: string, layout: UpdateTableLayoutDto) => {
     updateMutation.mutate({ id, layout });
   };
+
+  const isLoading = zonesQuery.isPending || tablesQuery.isPending;
+  const isError = zonesQuery.isError || tablesQuery.isError;
 
   return (
     <div className='space-y-4'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <ZoneTabs
-          zones={zones}
-          activeZoneId={effectiveZoneId}
-          onZoneChange={setActiveZoneId}
-          onZoneCreated={(zoneId) => setActiveZoneId(zoneId)}
-        />
+        {zonesQuery.isPending ? (
+          <div className='flex gap-2'>
+            <Skeleton className='h-9 w-24' />
+            <Skeleton className='h-9 w-24' />
+            <Skeleton className='h-9 w-24' />
+          </div>
+        ) : (
+          <ZoneTabs
+            zones={zones}
+            activeZoneId={effectiveZoneId}
+            onZoneChange={setActiveZoneId}
+            onZoneCreated={(zoneId) => setActiveZoneId(zoneId)}
+          />
+        )}
         <Button
           type='button'
           variant={editing ? 'default' : 'outline'}
@@ -68,14 +86,26 @@ export default function FloorPlanView() {
       </div>
 
       <div className='relative rounded-lg border'>
-        <TableMapCanvas
-          tables={tables}
-          editing={editing}
-          onUpdateTable={handleUpdateTable}
-          onSelectTable={(table) => toast.info(`Abrir orden de la mesa ${table.name}`)}
-          onDeleteRequest={setPendingDelete}
-        />
-        {editing && (
+        {isError ? (
+          <Alert variant='destructive' className='m-4'>
+            <Icons.alertCircle className='h-4 w-4' />
+            <AlertTitle>No se pudo cargar el mapa</AlertTitle>
+            <AlertDescription>
+              Ocurrió un error al obtener las zonas y mesas. Intenta de nuevo.
+            </AlertDescription>
+          </Alert>
+        ) : isLoading ? (
+          <Skeleton className='h-[480px] w-full rounded-none' />
+        ) : (
+          <TableMapCanvas
+            tables={zoneTables}
+            editing={editing}
+            onUpdateTable={handleUpdateTable}
+            onSelectTable={(table) => toast.info(`Abrir orden de la mesa ${table.name}`)}
+            onDeleteRequest={setPendingDelete}
+          />
+        )}
+        {editing && !isError && !isLoading && (
           <Button
             type='button'
             className='absolute right-4 bottom-4 shadow-lg'

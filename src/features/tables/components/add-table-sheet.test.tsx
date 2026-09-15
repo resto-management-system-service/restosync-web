@@ -1,30 +1,43 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { getTablesByZone, resetTableData } from '../api/mock-data';
 import { renderWithProviders } from '@/test/utils';
+import type { Table } from '../api/types';
+import { createTable } from '../api/service';
 import AddTableSheet from './add-table-sheet';
 
-beforeEach(() => resetTableData());
+vi.mock('../api/service', () => ({
+  createTable: vi.fn()
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 it('rejects an empty name and shows the inline error', async () => {
   const onOpenChange = vi.fn();
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} zoneId='zone-piso-1' />);
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} zoneId='z1' />);
 
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
   expect(await screen.findByText(/el nombre es requerido/i)).toBeInTheDocument();
-  expect(onOpenChange).not.toHaveBeenCalled();
+  expect(createTable).not.toHaveBeenCalled();
 });
 
 it('accepts a valid submission and creates the table in the zone', async () => {
   const onOpenChange = vi.fn();
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} zoneId='zone-piso-1' />);
+  vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: 'T14' } as Table);
+
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} zoneId='z1' />);
 
   await userEvent.type(screen.getByLabelText(/nombre/i), 'T14');
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
   await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
-  const tables = await getTablesByZone('zone-piso-1');
-  expect(tables.some((t) => t.name === 'T14')).toBe(true);
+  expect(createTable).toHaveBeenCalledWith({
+    name: 'T14',
+    capacity: 4,
+    shape: 'circle',
+    zoneId: 'z1'
+  });
 });

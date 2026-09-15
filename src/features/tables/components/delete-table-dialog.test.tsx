@@ -1,20 +1,23 @@
 import { expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { TableLayout } from '../api/mock-data';
+import type { Table } from '../api/types';
 import DeleteTableDialog from './delete-table-dialog';
 
-const table: TableLayout = {
+const table: Table = {
   id: 'table-t4',
   name: 'T4',
   capacity: 2,
-  status: 'available',
-  shape: 'square',
-  zoneId: 'zone-piso-1',
+  status: 'AVAILABLE',
+  restaurantId: 'r1',
+  zoneId: 'z1',
   positionX: 0.12,
   positionY: 0.55,
   width: 0.13,
-  height: 0.13
+  height: 0.13,
+  shape: 'square',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z'
 };
 
 it('does not confirm deletion until Eliminar is clicked', async () => {

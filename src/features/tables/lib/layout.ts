@@ -1,4 +1,4 @@
-import type { TableShape, TableStatus } from '../api/mock-data';
+import type { TableShape, TableStatus } from '../api/types';
 
 // ============================================================
 // Tables Layout Helpers
@@ -20,9 +20,9 @@ export function pixelToPercent(pixels: number, dimension: number): number {
 
 /** Semantic fill/stroke colors per table status (Tailwind green/amber/red). */
 export const STATUS_COLORS: Record<TableStatus, { fill: string; stroke: string; label: string }> = {
-  available: { fill: '#22c55e', stroke: '#15803d', label: '#ffffff' },
-  reserved: { fill: '#f59e0b', stroke: '#b45309', label: '#ffffff' },
-  occupied: { fill: '#ef4444', stroke: '#b91c1c', label: '#ffffff' }
+  AVAILABLE: { fill: '#22c55e', stroke: '#15803d', label: '#ffffff' },
+  RESERVED: { fill: '#f59e0b', stroke: '#b45309', label: '#ffffff' },
+  OCCUPIED: { fill: '#ef4444', stroke: '#b91c1c', label: '#ffffff' }
 };
 
 export const CHAIR_COLOR = { fill: '#f8fafc', stroke: '#94a3b8' };
@@ -65,7 +65,7 @@ export function chairOffsets(
   const cy = height / 2;
   const positions: Point[] = [];
 
-  if (shape === 'round') {
+  if (shape === 'circle') {
     const radius = Math.min(width, height) / 2;
     for (let i = 0; i < capacity; i++) {
       const angle = (Math.PI * 2 * i) / capacity;
@@ -77,6 +77,7 @@ export function chairOffsets(
     return positions;
   }
 
+  // 'rounded' and 'square' both distribute chairs around the rectangle perimeter.
   const perimeter = 2 * (width + height);
   for (let i = 0; i < capacity; i++) {
     const distance = ((i + 0.5) / capacity) * perimeter;

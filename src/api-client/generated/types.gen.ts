@@ -289,6 +289,30 @@ export type UpdateTableDto = {
     capacity?: number;
 };
 
+export type UpdateTableLayoutDto = {
+    /**
+     * Zone this table belongs to
+     */
+    zoneId?: string;
+    /**
+     * X position as a percentage of the canvas (0.0–1.0)
+     */
+    positionX?: number;
+    /**
+     * Y position as a percentage of the canvas (0.0–1.0)
+     */
+    positionY?: number;
+    /**
+     * Width as a percentage of the canvas (0.0–1.0)
+     */
+    width?: number;
+    /**
+     * Height as a percentage of the canvas (0.0–1.0)
+     */
+    height?: number;
+    shape?: 'rounded' | 'square' | 'circle';
+};
+
 export type CreateReservationDto = {
     customerName: string;
     customerPhone: string;
@@ -322,6 +346,28 @@ export type CreateRestaurantDto = {
      * IANA timezone used to interpret restaurant-local times
      */
     timezone?: string;
+};
+
+export type CreateZoneDto = {
+    /**
+     * Zone name, e.g. "Piso 1" or "Terraza"
+     */
+    name: string;
+    /**
+     * Sort order for display
+     */
+    sortOrder?: number;
+};
+
+export type UpdateZoneDto = {
+    /**
+     * Zone name, e.g. "Piso 1" or "Terraza"
+     */
+    name?: string;
+    /**
+     * Sort order for display
+     */
+    sortOrder?: number;
 };
 
 export type AppControllerHealthData = {
@@ -1474,6 +1520,33 @@ export type TablesControllerUpdateResponses = {
     200: unknown;
 };
 
+export type TablesControllerUpdateLayoutData = {
+    body: UpdateTableLayoutDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/tables/{id}/layout';
+};
+
+export type TablesControllerUpdateLayoutErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+    /**
+     * Table or zone not found
+     */
+    404: unknown;
+};
+
+export type TablesControllerUpdateLayoutResponses = {
+    /**
+     * Table layout updated
+     */
+    200: unknown;
+};
+
 export type ReservationsControllerFindAllData = {
     body?: never;
     path?: never;
@@ -1685,4 +1758,89 @@ export type RestaurantsControllerCreateResponses = {
      * Restaurant created
      */
     201: unknown;
+};
+
+export type ZonesControllerFindAllData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/zones';
+};
+
+export type ZonesControllerFindAllResponses = {
+    /**
+     * List of zones ordered by sortOrder
+     */
+    200: unknown;
+};
+
+export type ZonesControllerCreateData = {
+    body: CreateZoneDto;
+    path?: never;
+    query?: never;
+    url: '/zones';
+};
+
+export type ZonesControllerCreateErrors = {
+    /**
+     * Validation error
+     */
+    400: unknown;
+};
+
+export type ZonesControllerCreateResponses = {
+    /**
+     * Zone created
+     */
+    201: unknown;
+};
+
+export type ZonesControllerRemoveData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/zones/{id}';
+};
+
+export type ZonesControllerRemoveErrors = {
+    /**
+     * Zone still has tables assigned
+     */
+    400: unknown;
+    /**
+     * Zone not found
+     */
+    404: unknown;
+};
+
+export type ZonesControllerRemoveResponses = {
+    /**
+     * Zone deleted
+     */
+    200: unknown;
+};
+
+export type ZonesControllerUpdateData = {
+    body: UpdateZoneDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/zones/{id}';
+};
+
+export type ZonesControllerUpdateErrors = {
+    /**
+     * Zone not found
+     */
+    404: unknown;
+};
+
+export type ZonesControllerUpdateResponses = {
+    /**
+     * Zone updated
+     */
+    200: unknown;
 };

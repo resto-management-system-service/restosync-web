@@ -28,7 +28,8 @@ const capacityOptions = [
 ];
 
 const shapeOptions = [
-  { value: 'round', label: 'Redonda' },
+  { value: 'circle', label: 'Círculo' },
+  { value: 'rounded', label: 'Redondeada' },
   { value: 'square', label: 'Cuadrada' }
 ];
 

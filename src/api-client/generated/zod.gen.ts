@@ -182,6 +182,19 @@ export const zUpdateTableDto = z.object({
     capacity: z.number().optional()
 });
 
+export const zUpdateTableLayoutDto = z.object({
+    zoneId: z.uuid().optional(),
+    positionX: z.number().optional(),
+    positionY: z.number().optional(),
+    width: z.number().optional(),
+    height: z.number().optional(),
+    shape: z.enum([
+        'rounded',
+        'square',
+        'circle'
+    ]).optional().default('rounded')
+});
+
 export const zCreateReservationDto = z.object({
     customerName: z.string(),
     customerPhone: z.string(),
@@ -207,6 +220,16 @@ export const zSeatReservationDto = z.object({
 export const zCreateRestaurantDto = z.object({
     name: z.string(),
     timezone: z.string().optional().default('America/Lima')
+});
+
+export const zCreateZoneDto = z.object({
+    name: z.string(),
+    sortOrder: z.number().optional()
+});
+
+export const zUpdateZoneDto = z.object({
+    name: z.string().optional(),
+    sortOrder: z.number().optional()
 });
 
 export const zAuthControllerRegisterBody = zRegisterDto;
@@ -445,6 +468,12 @@ export const zTablesControllerUpdatePath = z.object({
     id: z.string()
 });
 
+export const zTablesControllerUpdateLayoutBody = zUpdateTableLayoutDto;
+
+export const zTablesControllerUpdateLayoutPath = z.object({
+    id: z.string()
+});
+
 export const zReservationsControllerFindAllQuery = z.object({
     page: z.number().gte(1).optional().default(1),
     limit: z.number().gte(1).lte(100).optional().default(20),
@@ -483,3 +512,15 @@ export const zReservationsControllerCancelPath = z.object({
 });
 
 export const zRestaurantsControllerCreateBody = zCreateRestaurantDto;
+
+export const zZonesControllerCreateBody = zCreateZoneDto;
+
+export const zZonesControllerRemovePath = z.object({
+    id: z.string()
+});
+
+export const zZonesControllerUpdateBody = zUpdateZoneDto;
+
+export const zZonesControllerUpdatePath = z.object({
+    id: z.string()
+});

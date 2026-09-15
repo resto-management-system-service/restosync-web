@@ -11,11 +11,11 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { buttonVariants } from '@/components/ui/button';
-import type { TableLayout } from '../api/mock-data';
+import type { Table } from '../api/types';
 
 interface DeleteTableDialogProps {
-  table: TableLayout | null;
-  onConfirm: (table: TableLayout) => void;
+  table: Table | null;
+  onConfirm: (table: Table) => void;
   onCancel: () => void;
 }
 

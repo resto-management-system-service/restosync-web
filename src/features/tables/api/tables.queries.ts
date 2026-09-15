@@ -1,39 +1,38 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
+import type { UpdateTableLayoutDto } from '@/api-client';
 import {
   createTable,
   createZone,
   deleteTable,
-  getTablesByZone,
+  getTables,
   getZones,
-  updateTableLayout,
-  type CreateTableInput,
-  type TableLayoutUpdate
-} from './mock-data';
+  updateTableLayout
+} from './service';
+import type { CreateTableInput } from './types';
 
 // ============================================================
 // Tables Query Key Factory, Query Options & Mutation Options
 // ============================================================
-// These wrap the in-memory mock functions. When the real API exists, only
-// `mock-data.ts` needs to change — these hooks keep the same shape.
 
 export const tablesKeys = {
   all: ['tables'] as const,
   zones: () => [...tablesKeys.all, 'zones'] as const,
-  byZone: (zoneId: string) => [...tablesKeys.all, 'zone', zoneId] as const
+  list: () => [...tablesKeys.all, 'list'] as const
 };
 
 export const zonesQueryOptions = () =>
   queryOptions({
     queryKey: tablesKeys.zones(),
-    queryFn: () => getZones()
+    queryFn: () => getZones(),
+    staleTime: 0
   });
 
-export const tablesByZoneQueryOptions = (zoneId: string) =>
+export const tablesQueryOptions = () =>
   queryOptions({
-    queryKey: tablesKeys.byZone(zoneId),
-    queryFn: () => getTablesByZone(zoneId),
-    enabled: !!zoneId
+    queryKey: tablesKeys.list(),
+    queryFn: () => getTables(),
+    staleTime: 0
   });
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: tablesKeys.all });
@@ -44,7 +43,7 @@ export const createTableMutation = mutationOptions({
 });
 
 export const updateTableLayoutMutation = mutationOptions({
-  mutationFn: ({ id, layout }: { id: string; layout: TableLayoutUpdate }) =>
+  mutationFn: ({ id, layout }: { id: string; layout: UpdateTableLayoutDto }) =>
     updateTableLayout(id, layout),
   onSettled: invalidateAll
 });

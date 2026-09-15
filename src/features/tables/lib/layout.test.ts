@@ -22,7 +22,8 @@ describe('percent/pixel conversion', () => {
 
 describe('chairOffsets', () => {
   it('produces capacity-many chair positions', () => {
-    expect(chairOffsets('round', 6, 100, 100)).toHaveLength(6);
+    expect(chairOffsets('circle', 6, 100, 100)).toHaveLength(6);
     expect(chairOffsets('square', 8, 120, 90)).toHaveLength(8);
+    expect(chairOffsets('rounded', 4, 100, 100)).toHaveLength(4);
   });
 });
