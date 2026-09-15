@@ -2148,6 +2148,51 @@
         ]
       }
     },
+    "/tables/{id}/layout": {
+      "patch": {
+        "operationId": "TablesController_updateLayout",
+        "summary": "Update table layout/visual fields (zone + position/size/shape)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTableLayoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Table layout updated"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "404": {
+            "description": "Table or zone not found"
+          }
+        },
+        "tags": [
+          "tables"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/reservations": {
       "post": {
         "operationId": "ReservationsController_create",
@@ -2474,6 +2519,132 @@
         },
         "tags": [
           "restaurants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/zones": {
+      "post": {
+        "operationId": "ZonesController_create",
+        "summary": "Create a zone",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateZoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Zone created"
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        },
+        "tags": [
+          "zones"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "ZonesController_findAll",
+        "summary": "List zones for the current restaurant",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of zones ordered by sortOrder"
+          }
+        },
+        "tags": [
+          "zones"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/zones/{id}": {
+      "patch": {
+        "operationId": "ZonesController_update",
+        "summary": "Rename or reorder a zone",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateZoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zone updated"
+          },
+          "404": {
+            "description": "Zone not found"
+          }
+        },
+        "tags": [
+          "zones"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "ZonesController_remove",
+        "summary": "Delete a zone (only if it has no tables)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zone deleted"
+          },
+          "400": {
+            "description": "Zone still has tables assigned"
+          },
+          "404": {
+            "description": "Zone not found"
+          }
+        },
+        "tags": [
+          "zones"
         ],
         "security": [
           {
@@ -3104,6 +3275,41 @@
           }
         }
       },
+      "UpdateTableLayoutDto": {
+        "type": "object",
+        "properties": {
+          "zoneId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Zone this table belongs to"
+          },
+          "positionX": {
+            "type": "number",
+            "description": "X position as a percentage of the canvas (0.0–1.0)"
+          },
+          "positionY": {
+            "type": "number",
+            "description": "Y position as a percentage of the canvas (0.0–1.0)"
+          },
+          "width": {
+            "type": "number",
+            "description": "Width as a percentage of the canvas (0.0–1.0)"
+          },
+          "height": {
+            "type": "number",
+            "description": "Height as a percentage of the canvas (0.0–1.0)"
+          },
+          "shape": {
+            "type": "string",
+            "enum": [
+              "rounded",
+              "square",
+              "circle"
+            ],
+            "default": "rounded"
+          }
+        }
+      },
       "CreateReservationDto": {
         "type": "object",
         "properties": {
@@ -3189,6 +3395,35 @@
         "required": [
           "name"
         ]
+      },
+      "CreateZoneDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Zone name, e.g. \"Piso 1\" or \"Terraza\""
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Sort order for display"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateZoneDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Zone name, e.g. \"Piso 1\" or \"Terraza\""
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Sort order for display"
+          }
+        }
       }
     }
   }
