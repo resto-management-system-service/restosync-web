@@ -2,7 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import Konva from 'konva';
-import { Layer, Rect, Stage } from 'react-konva';
+import { Layer, Stage } from 'react-konva';
 import type { UpdateTableLayoutDto } from '@/api-client';
 import type { Table } from '../api/types';
 import { percentToPixel, pixelToPercent } from '../lib/layout';
@@ -152,7 +152,11 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
     );
 
     return (
-      <div ref={containerRef} className='relative h-full min-h-[400px] w-full overflow-hidden'>
+      <div
+        ref={containerRef}
+        data-testid='table-map-canvas'
+        className='relative h-full w-full overflow-hidden bg-slate-50'
+      >
         {size.width > 0 && size.height > 0 && (
           <Stage
             ref={stageRef}
@@ -163,7 +167,6 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
             onWheel={handleWheel}
           >
             <Layer>
-              <Rect width={size.width} height={size.height} fill='#f8fafc' listening={false} />
               {placedTables.map((table) => {
                 const override =
                   resizeOverride && resizeOverride.id === table.id ? resizeOverride : null;

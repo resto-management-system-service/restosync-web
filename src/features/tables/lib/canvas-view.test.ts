@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_ZOOM, MIN_ZOOM, clampZoom, computeFit, zoomAtPoint } from './canvas-view';
+import {
+  MAX_CANVAS_HEIGHT,
+  MAX_ZOOM,
+  MIN_CANVAS_HEIGHT,
+  MIN_ZOOM,
+  clampCanvasHeight,
+  clampZoom,
+  computeFit,
+  zoomAtPoint
+} from './canvas-view';
 
 describe('clampZoom', () => {
   it('keeps scale within the allowed range', () => {
@@ -7,6 +16,16 @@ describe('clampZoom', () => {
     expect(clampZoom(100)).toBe(MAX_ZOOM);
     expect(clampZoom(0)).toBe(MIN_ZOOM);
     expect(clampZoom(-5)).toBe(MIN_ZOOM);
+  });
+});
+
+describe('clampCanvasHeight', () => {
+  it('clamps height within [MIN_CANVAS_HEIGHT, MAX_CANVAS_HEIGHT]', () => {
+    expect(clampCanvasHeight(100)).toBe(MIN_CANVAS_HEIGHT);
+    expect(clampCanvasHeight(500)).toBe(500);
+    expect(clampCanvasHeight(1000)).toBe(MAX_CANVAS_HEIGHT);
+    expect(clampCanvasHeight(MIN_CANVAS_HEIGHT)).toBe(MIN_CANVAS_HEIGHT);
+    expect(clampCanvasHeight(MAX_CANVAS_HEIGHT)).toBe(MAX_CANVAS_HEIGHT);
   });
 });
 

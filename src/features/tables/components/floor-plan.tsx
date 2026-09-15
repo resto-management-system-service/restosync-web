@@ -16,8 +16,10 @@ import {
   zonesQueryOptions
 } from '../api/tables.queries';
 import type { Table } from '../api/types';
+import { DEFAULT_CANVAS_HEIGHT, clampCanvasHeight } from '../lib/canvas-view';
 import type { TableMapCanvasHandle } from './table-map-canvas';
 import AddTableSheet from './add-table-sheet';
+import CanvasResizeHandle from './canvas-resize-handle';
 import DeleteTableDialog from './delete-table-dialog';
 import ZoneTabs from './zone-tabs';
 
@@ -32,7 +34,9 @@ export default function FloorPlanView() {
   const [addOpen, setAddOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Table | null>(null);
   const [pendingEdit, setPendingEdit] = useState<Table | null>(null);
+  const [canvasHeight, setCanvasHeight] = useState(DEFAULT_CANVAS_HEIGHT);
   const canvasRef = useRef<TableMapCanvasHandle>(null);
+  const dragStartHeightRef = useRef(DEFAULT_CANVAS_HEIGHT);
 
   const zonesQuery = useQuery(zonesQueryOptions());
   const tablesQuery = useQuery(tablesQueryOptions());
@@ -66,6 +70,14 @@ export default function FloorPlanView() {
   const closeSheet = () => {
     setAddOpen(false);
     setPendingEdit(null);
+  };
+
+  const handleResizeStart = () => {
+    dragStartHeightRef.current = canvasHeight;
+  };
+
+  const handleResizeMove = (deltaY: number) => {
+    setCanvasHeight(clampCanvasHeight(dragStartHeightRef.current + deltaY));
   };
 
   return (
@@ -106,39 +118,42 @@ export default function FloorPlanView() {
         </div>
       </div>
 
-      <div className='relative rounded-lg border'>
-        {isError ? (
-          <Alert variant='destructive' className='m-4'>
-            <Icons.alertCircle className='h-4 w-4' />
-            <AlertTitle>No se pudo cargar el mapa</AlertTitle>
-            <AlertDescription>
-              Ocurrió un error al obtener las zonas y mesas. Intenta de nuevo.
-            </AlertDescription>
-          </Alert>
-        ) : isLoading ? (
-          <Skeleton className='h-[480px] w-full rounded-none' />
-        ) : (
-          <TableMapCanvas
-            ref={canvasRef}
-            key={effectiveZoneId}
-            tables={zoneTables}
-            editing={editing}
-            onUpdateTable={handleUpdateTable}
-            onSelectTable={(table) => toast.info(`Abrir orden de la mesa ${table.name}`)}
-            onEditRequest={setPendingEdit}
-            onDeleteRequest={setPendingDelete}
-          />
-        )}
-        {editing && !isError && !isLoading && (
-          <Button
-            type='button'
-            className='absolute right-4 bottom-4 shadow-lg'
-            onClick={() => setAddOpen(true)}
-          >
-            <Icons.add className='mr-2 h-4 w-4' />
-            Agregar mesa
-          </Button>
-        )}
+      <div className='rounded-lg border'>
+        <div className='relative' data-testid='canvas-container' style={{ height: canvasHeight }}>
+          {isError ? (
+            <Alert variant='destructive' className='m-4'>
+              <Icons.alertCircle className='h-4 w-4' />
+              <AlertTitle>No se pudo cargar el mapa</AlertTitle>
+              <AlertDescription>
+                Ocurrió un error al obtener las zonas y mesas. Intenta de nuevo.
+              </AlertDescription>
+            </Alert>
+          ) : isLoading ? (
+            <Skeleton className='h-full w-full rounded-none' />
+          ) : (
+            <TableMapCanvas
+              ref={canvasRef}
+              key={effectiveZoneId}
+              tables={zoneTables}
+              editing={editing}
+              onUpdateTable={handleUpdateTable}
+              onSelectTable={(table) => toast.info(`Abrir orden de la mesa ${table.name}`)}
+              onEditRequest={setPendingEdit}
+              onDeleteRequest={setPendingDelete}
+            />
+          )}
+          {editing && !isError && !isLoading && (
+            <Button
+              type='button'
+              className='absolute right-4 bottom-4 shadow-lg'
+              onClick={() => setAddOpen(true)}
+            >
+              <Icons.add className='mr-2 h-4 w-4' />
+              Agregar mesa
+            </Button>
+          )}
+        </div>
+        <CanvasResizeHandle onDragStart={handleResizeStart} onDragMove={handleResizeMove} />
       </div>
 
       <AddTableSheet
