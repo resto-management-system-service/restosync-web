@@ -25,9 +25,21 @@ export const ZOOM_STEP = 1.1;
 /** Padding (px) applied when fitting content to the viewport. */
 export const FIT_PADDING = 40;
 
+/** Minimum height (px) the canvas container can be resized to. */
+export const MIN_CANVAS_HEIGHT = 300;
+/** Maximum height (px) the canvas container can be resized to. */
+export const MAX_CANVAS_HEIGHT = 750;
+/** Default canvas container height (px). */
+export const DEFAULT_CANVAS_HEIGHT = 480;
+
 /** Clamp a scale to the allowed zoom range. */
 export function clampZoom(scale: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale));
+}
+
+/** Clamp a canvas container height to [MIN_CANVAS_HEIGHT, MAX_CANVAS_HEIGHT]. */
+export function clampCanvasHeight(height: number): number {
+  return Math.min(MAX_CANVAS_HEIGHT, Math.max(MIN_CANVAS_HEIGHT, height));
 }
 
 /**

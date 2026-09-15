@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
@@ -204,4 +204,33 @@ it('resets the canvas (zoom/pan) when the zone changes', async () => {
   await screen.findByText('T6');
 
   expect(mocks.mountCount).toBe(2);
+});
+
+it('resizes the canvas container height when dragging the bottom handle, clamped', async () => {
+  renderView();
+  await screen.findByText('T1');
+
+  const container = screen.getByTestId('canvas-container');
+  expect(container).toHaveStyle({ height: '480px' });
+
+  const handle = screen.getByTestId('canvas-resize-handle');
+  // jsdom has no PointerEvent, so dispatch MouseEvents with pointer types so
+  // `clientY` is honored (fireEvent.pointer* falls back to a generic Event).
+  const pointer = (type: string, clientY: number) =>
+    fireEvent(handle, new MouseEvent(type, { clientY, bubbles: true, cancelable: true }));
+
+  pointer('pointerdown', 500);
+  pointer('pointermove', 700);
+  expect(container).toHaveStyle({ height: '680px' });
+
+  // Drag far beyond the max → clamped to MAX_CANVAS_HEIGHT.
+  pointer('pointermove', 2000);
+  expect(container).toHaveStyle({ height: '750px' });
+
+  // Drag far below the min → clamped to MIN_CANVAS_HEIGHT.
+  pointer('pointermove', 0);
+  expect(container).toHaveStyle({ height: '300px' });
+
+  pointer('pointerup', 0);
+  expect(container).toHaveStyle({ height: '300px' });
 });

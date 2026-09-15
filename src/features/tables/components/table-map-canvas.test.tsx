@@ -215,7 +215,9 @@ describe('TableMapCanvas zoom/pan', () => {
       x: () => 0,
       y: () => 0,
       scale: vi.fn(),
-      position: vi.fn()
+      position: vi.fn(),
+      width: vi.fn(),
+      height: vi.fn()
     };
 
     stageHandlers.onWheel?.({
@@ -225,5 +227,55 @@ describe('TableMapCanvas zoom/pan', () => {
 
     // 2.9 * ZOOM_STEP ≈ 3.19, clamped to MAX_ZOOM
     expect(stage.scale).toHaveBeenCalledWith({ x: MAX_ZOOM, y: MAX_ZOOM });
+  });
+
+  it('zooms without resizing the stage viewport (background stays fixed)', () => {
+    render(
+      <TableMapCanvas
+        tables={[table]}
+        editing
+        onUpdateTable={() => {}}
+        onSelectTable={() => {}}
+        onEditRequest={() => {}}
+        onDeleteRequest={() => {}}
+      />
+    );
+
+    const stage = {
+      getPointerPosition: () => ({ x: 400, y: 300 }),
+      scaleX: () => 1,
+      x: () => 0,
+      y: () => 0,
+      scale: vi.fn(),
+      position: vi.fn(),
+      width: vi.fn(),
+      height: vi.fn()
+    };
+
+    stageHandlers.onWheel?.({
+      evt: { preventDefault: vi.fn(), deltaY: -100 },
+      target: { getStage: () => stage }
+    });
+
+    // Zooming must change scale/position, but never the viewport dimensions.
+    expect(stage.scale).toHaveBeenCalled();
+    expect(stage.position).toHaveBeenCalled();
+    expect(stage.width).not.toHaveBeenCalled();
+    expect(stage.height).not.toHaveBeenCalled();
+  });
+
+  it('renders the background as CSS on the container, not as a scaled Konva shape', () => {
+    render(
+      <TableMapCanvas
+        tables={[table]}
+        editing
+        onUpdateTable={() => {}}
+        onSelectTable={() => {}}
+        onEditRequest={() => {}}
+        onDeleteRequest={() => {}}
+      />
+    );
+
+    expect(screen.getByTestId('table-map-canvas')).toHaveClass('bg-slate-50');
   });
 });
