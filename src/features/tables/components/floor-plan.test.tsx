@@ -6,6 +6,12 @@ import { getQueryClient } from '@/lib/query-client';
 import type { Table, Zone } from '../api/types';
 import FloorPlanView from './floor-plan';
 
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() }
+}));
+
+import { toast } from 'sonner';
+
 const mocks = vi.hoisted(() => ({
   mountCount: 0,
   getTables: vi.fn(),
@@ -14,7 +20,9 @@ const mocks = vi.hoisted(() => ({
   updateTable: vi.fn(),
   deleteTable: vi.fn(),
   createTable: vi.fn(),
-  createZone: vi.fn()
+  createZone: vi.fn(),
+  updateZone: vi.fn(),
+  deleteZone: vi.fn()
 }));
 
 vi.mock('../api/service', () => ({
@@ -24,7 +32,9 @@ vi.mock('../api/service', () => ({
   updateTable: mocks.updateTable,
   deleteTable: mocks.deleteTable,
   createTable: mocks.createTable,
-  createZone: mocks.createZone
+  createZone: mocks.createZone,
+  updateZone: mocks.updateZone,
+  deleteZone: mocks.deleteZone
 }));
 
 vi.mock('next/dynamic', async () => {
@@ -123,6 +133,7 @@ beforeEach(() => {
   zones = [zone('z1', 'Piso 1', 0), zone('z2', 'Piso 2', 1)];
   tables = [table('t1', 'T1', 'z1'), table('t2', 'T2', 'z1'), table('t6', 'T6', 'z2')];
 
+  vi.clearAllMocks();
   mocks.mountCount = 0;
   mocks.getTables.mockReset().mockImplementation(async () => tables);
   mocks.getZones.mockReset().mockImplementation(async () => zones);
@@ -133,6 +144,10 @@ beforeEach(() => {
   mocks.updateTable.mockReset().mockResolvedValue({});
   mocks.createTable.mockReset();
   mocks.createZone.mockReset();
+  mocks.updateZone.mockReset().mockResolvedValue({});
+  mocks.deleteZone.mockReset().mockImplementation(async (id: string) => {
+    zones = zones.filter((z) => z.id !== id);
+  });
 });
 
 it('renders only the active zone tables and switches zones', async () => {
@@ -233,4 +248,70 @@ it('resizes the canvas container height when dragging the bottom handle, clamped
 
   pointer('pointerup', 0);
   expect(container).toHaveStyle({ height: '300px' });
+});
+
+it('renames a zone via the dropdown (pre-filled, calls updateZone)', async () => {
+  renderView();
+  await screen.findByText('T1');
+
+  await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'Opciones de Piso 1' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: /renombrar/i }));
+
+  const input = await screen.findByLabelText(/nuevo nombre/i);
+  expect(input).toHaveValue('Piso 1');
+
+  await userEvent.clear(input);
+  await userEvent.type(input, 'Planta Baja');
+  await userEvent.click(screen.getByRole('button', { name: /guardar nombre/i }));
+
+  await waitFor(() => expect(mocks.updateZone).toHaveBeenCalledWith('z1', { name: 'Planta Baja' }));
+});
+
+it('deletes a zone only after confirmation', async () => {
+  renderView();
+  await screen.findByText('T1');
+
+  await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'Opciones de Piso 1' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: /eliminar/i }));
+
+  expect(await screen.findByText(/¿Eliminar la zona Piso 1\?/)).toBeInTheDocument();
+  expect(mocks.deleteZone).not.toHaveBeenCalled();
+
+  await userEvent.click(screen.getByRole('button', { name: /^eliminar$/i }));
+
+  await waitFor(() => expect(mocks.deleteZone).toHaveBeenCalledWith('z1'));
+});
+
+it('surfaces the 400 rejection message when deleting a zone with busy tables', async () => {
+  mocks.deleteZone.mockRejectedValue(
+    new Error('Cannot delete a zone that has reserved or occupied tables')
+  );
+  renderView();
+  await screen.findByText('T1');
+
+  await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'Opciones de Piso 1' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: /eliminar/i }));
+  await userEvent.click(await screen.findByRole('button', { name: /^eliminar$/i }));
+
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith(
+      'Cannot delete a zone that has reserved or occupied tables'
+    )
+  );
+});
+
+it('switches to the first remaining zone after deleting the active zone', async () => {
+  renderView();
+  await screen.findByText('T1');
+
+  await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'Opciones de Piso 1' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: /eliminar/i }));
+  await userEvent.click(await screen.findByRole('button', { name: /^eliminar$/i }));
+
+  await waitFor(() => expect(mocks.deleteZone).toHaveBeenCalledWith('z1'));
+  await waitFor(() => expect(screen.getByText('T6')).toBeInTheDocument());
 });

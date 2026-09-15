@@ -5,12 +5,14 @@ import {
   createTable,
   createZone,
   deleteTable,
+  deleteZone,
   getTables,
   getZones,
   updateTable,
-  updateTableLayout
+  updateTableLayout,
+  updateZone
 } from './service';
-import type { CreateTableInput, UpdateTableInput } from './types';
+import type { CreateTableInput, UpdateTableInput, UpdateZoneInput } from './types';
 
 // ============================================================
 // Tables Query Key Factory, Query Options & Mutation Options
@@ -61,5 +63,15 @@ export const deleteTableMutation = mutationOptions({
 
 export const createZoneMutation = mutationOptions({
   mutationFn: (name: string) => createZone(name),
+  onSettled: invalidateAll
+});
+
+export const updateZoneMutation = mutationOptions({
+  mutationFn: ({ id, input }: { id: string; input: UpdateZoneInput }) => updateZone(id, input),
+  onSettled: invalidateAll
+});
+
+export const deleteZoneMutation = mutationOptions({
+  mutationFn: (id: string) => deleteZone(id),
   onSettled: invalidateAll
 });

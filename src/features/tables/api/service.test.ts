@@ -7,7 +7,9 @@ const api = vi.hoisted(() => ({
   tablesControllerUpdate: vi.fn(),
   tablesControllerUpdateLayout: vi.fn(),
   zonesControllerFindAll: vi.fn(),
-  zonesControllerCreate: vi.fn()
+  zonesControllerCreate: vi.fn(),
+  zonesControllerUpdate: vi.fn(),
+  zonesControllerRemove: vi.fn()
 }));
 
 vi.mock('@/api-client', () => api);
@@ -16,10 +18,12 @@ import {
   createTable,
   createZone,
   deleteTable,
+  deleteZone,
   getTables,
   getZones,
   updateTable,
-  updateTableLayout
+  updateTableLayout,
+  updateZone
 } from './service';
 
 beforeEach(() => {
@@ -119,5 +123,38 @@ describe('tables service', () => {
 
     expect(api.zonesControllerCreate).toHaveBeenCalledWith({ body: { name: 'Sótano' } });
     expect(zone).toEqual({ id: 'z-new', name: 'Sótano' });
+  });
+
+  it('updateZone calls zonesControllerUpdate with path + name', async () => {
+    api.zonesControllerUpdate.mockResolvedValue({ data: { id: 'z1' }, error: undefined });
+
+    await updateZone('z1', { name: 'Planta Baja' });
+
+    expect(api.zonesControllerUpdate).toHaveBeenCalledWith({
+      path: { id: 'z1' },
+      body: { name: 'Planta Baja' }
+    });
+  });
+
+  it('deleteZone calls zonesControllerRemove with path', async () => {
+    api.zonesControllerRemove.mockResolvedValue({ data: undefined, error: undefined });
+
+    await deleteZone('z1');
+
+    expect(api.zonesControllerRemove).toHaveBeenCalledWith({ path: { id: 'z1' } });
+  });
+
+  it('deleteZone surfaces the API rejection message', async () => {
+    api.zonesControllerRemove.mockResolvedValue({
+      data: undefined,
+      error: {
+        message: 'Cannot delete a zone that has reserved or occupied tables',
+        statusCode: 400
+      }
+    });
+
+    await expect(deleteZone('z1')).rejects.toThrow(
+      'Cannot delete a zone that has reserved or occupied tables'
+    );
   });
 });
