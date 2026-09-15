@@ -80,6 +80,14 @@ export const navGroups: NavGroup[] = [
         ]
       },
       {
+        title: 'Mesas',
+        url: '/dashboard/tables',
+        icon: 'tables',
+        shortcut: ['t', 't'],
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Users',
         url: '/dashboard/users',
         icon: 'teams',

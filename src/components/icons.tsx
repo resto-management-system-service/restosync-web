@@ -2,6 +2,7 @@ import {
   IconAdjustmentsHorizontal,
   IconAlertCircle,
   IconAlertTriangle,
+  IconArmchair,
   IconArrowRight,
   IconBell,
   IconBold,
@@ -186,6 +187,7 @@ export const Icons = {
   // Commerce / Plans
   billing: IconCreditCard,
   creditCard: IconCreditCard,
+  tables: IconArmchair,
   product: IconBox,
   pro: IconCrown,
   exclusive: IconStar,
