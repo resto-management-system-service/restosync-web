@@ -1,11 +1,16 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
 import Konva from 'konva';
+import { toast } from 'sonner';
 import { Circle, Group, Rect, Text } from 'react-konva';
 import type { Table } from '../api/types';
 import { CHAIR_COLOR, CHAIR_RADIUS, STATUS_COLORS, chairOffsets } from '../lib/layout';
 
 const HANDLE_SIZE = 14;
 const MIN_SIZE_PX = 40;
+const DISABLED_OPACITY = 0.35;
+const BLOCKED_MESSAGE = 'No se puede editar o eliminar una mesa reservada u ocupada';
 
 interface TableShapeProps {
   table: Table;
@@ -49,6 +54,25 @@ export default function TableShape({
   const shape = table.shape ?? 'rounded';
   const chairs = chairOffsets(shape, table.capacity ?? 0, width, height);
   const labelFontSize = Math.max(11, Math.min(width, height) * 0.3);
+  const isAvailable = table.status === 'AVAILABLE';
+
+  const handleEditClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    e.cancelBubble = true;
+    if (!isAvailable) {
+      toast.warning(BLOCKED_MESSAGE);
+      return;
+    }
+    onEditRequest(table);
+  };
+
+  const handleDeleteClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    e.cancelBubble = true;
+    if (!isAvailable) {
+      toast.warning(BLOCKED_MESSAGE);
+      return;
+    }
+    onDeleteRequest(table);
+  };
 
   return (
     <Group
@@ -57,12 +81,20 @@ export default function TableShape({
       y={y}
       draggable={editing}
       onClick={() => {
-        if (editing) onEditRequest(table);
-        else onSelect(table);
+        if (editing) {
+          if (isAvailable) onEditRequest(table);
+          else toast.warning(BLOCKED_MESSAGE);
+        } else {
+          onSelect(table);
+        }
       }}
       onTap={() => {
-        if (editing) onEditRequest(table);
-        else onSelect(table);
+        if (editing) {
+          if (isAvailable) onEditRequest(table);
+          else toast.warning(BLOCKED_MESSAGE);
+        } else {
+          onSelect(table);
+        }
       }}
       onDragEnd={(e) => onDragEnd(table.id, e.target.x(), e.target.y())}
     >
@@ -119,20 +151,38 @@ export default function TableShape({
             name='table-delete'
             x={-12}
             y={-12}
-            onClick={(e) => {
-              e.cancelBubble = true;
-              onDeleteRequest(table);
-            }}
-            onTap={(e) => {
-              e.cancelBubble = true;
-              onDeleteRequest(table);
-            }}
+            opacity={isAvailable ? 1 : DISABLED_OPACITY}
+            onClick={handleDeleteClick}
+            onTap={handleDeleteClick}
           >
             <Circle radius={11} fill='#0f172a' />
             <Text
               text='\u00d7'
               fontSize={16}
               fontStyle='bold'
+              fill='#ffffff'
+              x={-11}
+              y={-11}
+              width={22}
+              height={22}
+              align='center'
+              verticalAlign='middle'
+              listening={false}
+            />
+          </Group>
+
+          <Group
+            name='table-edit'
+            x={width + 12}
+            y={-12}
+            opacity={isAvailable ? 1 : DISABLED_OPACITY}
+            onClick={handleEditClick}
+            onTap={handleEditClick}
+          >
+            <Circle radius={11} fill='#0f172a' />
+            <Text
+              text='\u270e'
+              fontSize={13}
               fill='#ffffff'
               x={-11}
               y={-11}

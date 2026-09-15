@@ -11,16 +11,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { UpdateTableLayoutDto } from '@/api-client';
 import {
   deleteTableMutation,
+  deleteZoneMutation,
   tablesQueryOptions,
   updateTableLayoutMutation,
   zonesQueryOptions
 } from '../api/tables.queries';
-import type { Table } from '../api/types';
+import type { Table, Zone } from '../api/types';
 import { DEFAULT_CANVAS_HEIGHT, clampCanvasHeight } from '../lib/canvas-view';
 import type { TableMapCanvasHandle } from './table-map-canvas';
 import AddTableSheet from './add-table-sheet';
 import CanvasResizeHandle from './canvas-resize-handle';
 import DeleteTableDialog from './delete-table-dialog';
+import DeleteZoneDialog from './delete-zone-dialog';
 import ZoneTabs from './zone-tabs';
 
 const TableMapCanvas = dynamic(() => import('./table-map-canvas'), {
@@ -34,6 +36,7 @@ export default function FloorPlanView() {
   const [addOpen, setAddOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Table | null>(null);
   const [pendingEdit, setPendingEdit] = useState<Table | null>(null);
+  const [pendingDeleteZone, setPendingDeleteZone] = useState<Zone | null>(null);
   const [canvasHeight, setCanvasHeight] = useState(DEFAULT_CANVAS_HEIGHT);
   const canvasRef = useRef<TableMapCanvasHandle>(null);
   const dragStartHeightRef = useRef(DEFAULT_CANVAS_HEIGHT);
@@ -56,6 +59,16 @@ export default function FloorPlanView() {
       setPendingDelete(null);
       toast.success('Mesa eliminada');
     }
+  });
+
+  const deleteZone = useMutation({
+    ...deleteZoneMutation,
+    onSuccess: (_data, deletedId) => {
+      setPendingDeleteZone(null);
+      toast.success('Zona eliminada');
+      if (activeZoneId === deletedId) setActiveZoneId('');
+    },
+    onError: (error) => toast.error(error.message)
   });
 
   const handleUpdateTable = (id: string, layout: UpdateTableLayoutDto) => {
@@ -93,8 +106,10 @@ export default function FloorPlanView() {
           <ZoneTabs
             zones={zones}
             activeZoneId={effectiveZoneId}
+            editing={editing}
             onZoneChange={setActiveZoneId}
             onZoneCreated={(zoneId) => setActiveZoneId(zoneId)}
+            onDeleteZone={setPendingDeleteZone}
           />
         )}
         <div className='flex items-center gap-2'>
@@ -169,6 +184,11 @@ export default function FloorPlanView() {
         table={pendingDelete}
         onConfirm={(table) => deleteMutation.mutate(table.id)}
         onCancel={() => setPendingDelete(null)}
+      />
+      <DeleteZoneDialog
+        zone={pendingDeleteZone}
+        onConfirm={(zone) => deleteZone.mutate(zone.id)}
+        onCancel={() => setPendingDeleteZone(null)}
       />
     </div>
   );

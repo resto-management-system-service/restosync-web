@@ -62,3 +62,8 @@ export interface UpdateTableInput {
   name: string;
   capacity: number;
 }
+
+/** Fields editable via PATCH /zones/:id (name only in this UI). */
+export interface UpdateZoneInput {
+  name: string;
+}

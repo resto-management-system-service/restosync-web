@@ -9,9 +9,11 @@ import {
   tablesControllerUpdateLayout,
   zonesControllerCreate,
   zonesControllerFindAll,
+  zonesControllerRemove,
+  zonesControllerUpdate,
   type UpdateTableLayoutDto
 } from '@/api-client';
-import type { CreateTableInput, Table, UpdateTableInput, Zone } from './types';
+import type { CreateTableInput, Table, UpdateTableInput, UpdateZoneInput, Zone } from './types';
 
 /** Default placement (percentages, canvas center) for a newly created table. */
 const DEFAULT_LAYOUT: UpdateTableLayoutDto = {
@@ -20,6 +22,20 @@ const DEFAULT_LAYOUT: UpdateTableLayoutDto = {
   width: 0.16,
   height: 0.16
 };
+
+/**
+ * Extract a human-readable message from a generated-client error. NestJS error
+ * bodies are `{ message, error, statusCode }`; `message` may be a string or an
+ * array of strings (validation errors).
+ */
+function extractApiMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+    if (Array.isArray(message) && typeof message[0] === 'string') return message[0];
+  }
+  return fallback;
+}
 
 /**
  * Fetch all tables for the current restaurant. Zone filtering happens
@@ -122,4 +138,32 @@ export async function createZone(name: string): Promise<Zone> {
   }
 
   return data as Zone;
+}
+
+/**
+ * Rename a zone via PATCH /zones/:id.
+ */
+export async function updateZone(id: string, input: UpdateZoneInput): Promise<Zone> {
+  const { data, error } = await zonesControllerUpdate({
+    path: { id },
+    body: { name: input.name }
+  });
+
+  if (error) {
+    throw new Error(`Failed to update zone: ${JSON.stringify(error)}`);
+  }
+
+  return data as Zone;
+}
+
+/**
+ * Delete a zone via DELETE /zones/:id. The API rejects (400) when the zone
+ * still has RESERVED/OCCUPIED tables; the thrown error carries that message.
+ */
+export async function deleteZone(id: string): Promise<void> {
+  const { error } = await zonesControllerRemove({ path: { id } });
+
+  if (error) {
+    throw new Error(extractApiMessage(error, 'Failed to delete zone'));
+  }
 }
