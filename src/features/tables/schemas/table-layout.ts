@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import type { CreateTableInput, TableShape } from '../api/types';
+import type { CreateTableInput, TableShape, UpdateTableInput } from '../api/types';
 
 export const tableLayoutFormSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido.'),
@@ -21,5 +21,12 @@ export function toCreateTableInput(v: TableLayoutFormValues, zoneId: string): Cr
     capacity: Number(v.capacity),
     shape: v.shape as TableShape,
     zoneId
+  };
+}
+
+export function toUpdateTableInput(v: TableLayoutFormValues): UpdateTableInput {
+  return {
+    name: v.name,
+    capacity: Number(v.capacity)
   };
 }

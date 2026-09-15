@@ -3,20 +3,37 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
 import type { Table } from '../api/types';
-import { createTable } from '../api/service';
+import { createTable, updateTable } from '../api/service';
 import AddTableSheet from './add-table-sheet';
 
 vi.mock('../api/service', () => ({
-  createTable: vi.fn()
+  createTable: vi.fn(),
+  updateTable: vi.fn()
 }));
+
+const table: Table = {
+  id: 't1',
+  name: 'T1',
+  capacity: 6,
+  status: 'AVAILABLE',
+  restaurantId: 'r1',
+  zoneId: 'z1',
+  positionX: 0.2,
+  positionY: 0.2,
+  width: 0.16,
+  height: 0.16,
+  shape: 'circle',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z'
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-it('rejects an empty name and shows the inline error', async () => {
+it('rejects an empty name and shows the inline error (create mode)', async () => {
   const onOpenChange = vi.fn();
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} zoneId='z1' />);
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
 
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
@@ -28,7 +45,7 @@ it('accepts a valid submission and creates the table in the zone', async () => {
   const onOpenChange = vi.fn();
   vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: 'T14' } as Table);
 
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} zoneId='z1' />);
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
 
   await userEvent.type(screen.getByLabelText(/nombre/i), 'T14');
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
@@ -40,4 +57,28 @@ it('accepts a valid submission and creates the table in the zone', async () => {
     shape: 'circle',
     zoneId: 'z1'
   });
+});
+
+it('pre-fills the form in edit mode and hides the shape field', () => {
+  const onOpenChange = vi.fn();
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={table} zoneId='z1' />);
+
+  expect(screen.getByLabelText(/nombre/i)).toHaveValue('T1');
+  expect(screen.getByLabelText(/capacidad/i)).toHaveTextContent('6 personas');
+  expect(screen.queryByLabelText(/forma/i)).not.toBeInTheDocument();
+});
+
+it('submits an edit by calling updateTable (not createTable) with the correct id/fields', async () => {
+  const onOpenChange = vi.fn();
+  vi.mocked(updateTable).mockResolvedValue(table);
+
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={table} zoneId='z1' />);
+
+  await userEvent.clear(screen.getByLabelText(/nombre/i));
+  await userEvent.type(screen.getByLabelText(/nombre/i), 'T1-A');
+  await userEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+
+  await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  expect(updateTable).toHaveBeenCalledWith('t1', { name: 'T1-A', capacity: 6 });
+  expect(createTable).not.toHaveBeenCalled();
 });

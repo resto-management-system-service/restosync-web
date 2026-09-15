@@ -18,6 +18,7 @@ interface TableShapeProps {
   onResize: (id: string, width: number, height: number) => void;
   onResizeEnd: (id: string, width: number, height: number) => void;
   onSelect: (table: Table) => void;
+  onEditRequest: (table: Table) => void;
   onDeleteRequest: (table: Table) => void;
 }
 
@@ -32,6 +33,7 @@ export default function TableShape({
   onResize,
   onResizeEnd,
   onSelect,
+  onEditRequest,
   onDeleteRequest
 }: TableShapeProps) {
   const handleRef = useRef<Konva.Group>(null);
@@ -50,14 +52,17 @@ export default function TableShape({
 
   return (
     <Group
+      name='table-body'
       x={x}
       y={y}
       draggable={editing}
       onClick={() => {
-        if (!editing) onSelect(table);
+        if (editing) onEditRequest(table);
+        else onSelect(table);
       }}
       onTap={() => {
-        if (!editing) onSelect(table);
+        if (editing) onEditRequest(table);
+        else onSelect(table);
       }}
       onDragEnd={(e) => onDragEnd(table.id, e.target.x(), e.target.y())}
     >
@@ -111,10 +116,17 @@ export default function TableShape({
       {editing && (
         <>
           <Group
+            name='table-delete'
             x={-12}
             y={-12}
-            onClick={() => onDeleteRequest(table)}
-            onTap={() => onDeleteRequest(table)}
+            onClick={(e) => {
+              e.cancelBubble = true;
+              onDeleteRequest(table);
+            }}
+            onTap={(e) => {
+              e.cancelBubble = true;
+              onDeleteRequest(table);
+            }}
           >
             <Circle radius={11} fill='#0f172a' />
             <Text
@@ -134,9 +146,16 @@ export default function TableShape({
 
           <Group
             ref={handleRef}
+            name='table-resize'
             x={0}
             y={0}
             draggable
+            onClick={(e) => {
+              e.cancelBubble = true;
+            }}
+            onTap={(e) => {
+              e.cancelBubble = true;
+            }}
             onDragStart={() => {
               draggingRef.current = true;
             }}
