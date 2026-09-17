@@ -3,8 +3,32 @@ import { render } from '@testing-library/react';
 import type { Table } from '../api/types';
 import TableShape from './table-shape';
 
-type Handler = (e: { cancelBubble: boolean }) => void;
-const groupHandlers: Record<string, { onClick?: Handler; onTap?: Handler; opacity?: number }> = {};
+type ClickHandler = (e: { cancelBubble: boolean }) => void;
+
+/** Minimal stand-in for a Konva node as seen inside drag handlers. */
+interface MockNode {
+  x: () => number;
+  y: () => number;
+  getStage: () => null;
+}
+
+interface DragEvent {
+  target: MockNode;
+  currentTarget?: MockNode;
+  cancelBubble: boolean;
+}
+
+const groupHandlers: Record<
+  string,
+  {
+    onClick?: ClickHandler;
+    onTap?: ClickHandler;
+    onDragStart?: (e: DragEvent) => void;
+    onDragMove?: (e: DragEvent) => void;
+    onDragEnd?: (e: DragEvent) => void;
+    opacity?: number;
+  }
+> = {};
 
 vi.mock('sonner', () => ({
   toast: { warning: vi.fn(), success: vi.fn(), error: vi.fn(), info: vi.fn() }
@@ -15,16 +39,22 @@ vi.mock('react-konva', () => ({
     name,
     onClick,
     onTap,
+    onDragStart,
+    onDragMove,
+    onDragEnd,
     opacity,
     children
   }: {
     name?: string;
-    onClick?: Handler;
-    onTap?: Handler;
+    onClick?: ClickHandler;
+    onTap?: ClickHandler;
+    onDragStart?: (e: DragEvent) => void;
+    onDragMove?: (e: DragEvent) => void;
+    onDragEnd?: (e: DragEvent) => void;
     opacity?: number;
     children?: React.ReactNode;
   }) => {
-    if (name) groupHandlers[name] = { onClick, onTap, opacity };
+    if (name) groupHandlers[name] = { onClick, onTap, onDragStart, onDragMove, onDragEnd, opacity };
     return <div data-testid={name}>{children}</div>;
   },
   Circle: () => <div />,
@@ -71,6 +101,8 @@ function renderShape(props: Partial<Parameters<typeof TableShape>[0]> = {}) {
     />
   );
 }
+
+const node = (x: number, y: number): MockNode => ({ x: () => x, y: () => y, getStage: () => null });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -159,4 +191,68 @@ it('shows a toast (no API call) when clicking edit/delete on a non-available tab
   groupHandlers['table-delete'].onClick?.({ cancelBubble: false });
   expect(toast.warning).toHaveBeenCalledWith(BLOCKED_MESSAGE);
   expect(onDeleteRequest).not.toHaveBeenCalled();
+});
+
+describe('drag vs resize separation', () => {
+  it('dragging the body updates position (onDragEnd) and never width/height (onResizeEnd)', () => {
+    const onDragEnd = vi.fn();
+    const onResizeEnd = vi.fn();
+    renderShape({ onDragEnd, onResizeEnd });
+
+    const body = node(120, 90);
+    groupHandlers['table-body'].onDragEnd?.({
+      target: body,
+      currentTarget: body,
+      cancelBubble: false
+    });
+
+    expect(onDragEnd).toHaveBeenCalledWith('t1', 120, 90);
+    expect(onResizeEnd).not.toHaveBeenCalled();
+  });
+
+  it('dragging the resize handle updates size (onResizeEnd) and never position (onDragEnd)', () => {
+    const onDragEnd = vi.fn();
+    const onResizeEnd = vi.fn();
+    renderShape({ onDragEnd, onResizeEnd });
+
+    const event: DragEvent = { target: node(150, 110), cancelBubble: false };
+    groupHandlers['table-resize'].onDragEnd?.(event);
+
+    // width/height derive from handle position + half handle size (HANDLE_SIZE = 14)
+    expect(onResizeEnd).toHaveBeenCalledWith('t1', 157, 117);
+    expect(onDragEnd).not.toHaveBeenCalled();
+    expect(event.cancelBubble).toBe(true);
+  });
+
+  it('resize handle drag cancels bubbling so the body never sees it', () => {
+    const onDragEnd = vi.fn();
+    const onResize = vi.fn();
+    renderShape({ onDragEnd, onResize });
+
+    const startEvent: DragEvent = { target: node(0, 0), cancelBubble: false };
+    groupHandlers['table-resize'].onDragStart?.(startEvent);
+    expect(startEvent.cancelBubble).toBe(true);
+
+    const moveEvent: DragEvent = { target: node(150, 110), cancelBubble: false };
+    groupHandlers['table-resize'].onDragMove?.(moveEvent);
+    expect(moveEvent.cancelBubble).toBe(true);
+    expect(onResize).toHaveBeenCalledWith('t1', 157, 117);
+    expect(onDragEnd).not.toHaveBeenCalled();
+  });
+
+  it('ignores a bubbled dragend on the body (target !== currentTarget)', () => {
+    const onDragEnd = vi.fn();
+    renderShape({ onDragEnd });
+
+    // Simulate a dragend that bubbled up from the resize handle child.
+    const body = node(0, 0);
+    const handle = node(150, 110);
+    groupHandlers['table-body'].onDragEnd?.({
+      target: handle,
+      currentTarget: body,
+      cancelBubble: false
+    });
+
+    expect(onDragEnd).not.toHaveBeenCalled();
+  });
 });

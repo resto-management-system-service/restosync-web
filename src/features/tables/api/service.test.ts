@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { rectsOverlap } from '../lib/layout';
 
 const api = vi.hoisted(() => ({
   tablesControllerFindAll: vi.fn(),
@@ -92,6 +93,36 @@ describe('tables service', () => {
         height: 0.16
       }
     });
+  });
+
+  it('places a new table at a different position than an existing table in the same zone', async () => {
+    api.tablesControllerCreate.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+    api.tablesControllerUpdateLayout.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+    api.tablesControllerFindAll.mockResolvedValue({
+      data: [
+        {
+          id: 't1',
+          zoneId: 'z1',
+          positionX: 0.5,
+          positionY: 0.5,
+          width: 0.16,
+          height: 0.16
+        }
+      ],
+      error: undefined
+    });
+
+    await createTable({ name: 'T20', capacity: 4, shape: 'circle', zoneId: 'z1' });
+
+    const body = api.tablesControllerUpdateLayout.mock.calls[0][0].body;
+    expect(body.positionX).not.toBe(0.5);
+    expect(body.positionY).not.toBe(0.5);
+    expect(
+      rectsOverlap(
+        { positionX: body.positionX, positionY: body.positionY, width: 0.16, height: 0.16 },
+        { positionX: 0.5, positionY: 0.5, width: 0.16, height: 0.16 }
+      )
+    ).toBe(false);
   });
 
   it('deleteTable calls tablesControllerRemove with path', async () => {

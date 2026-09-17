@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Table } from '../api/types';
 import { MAX_ZOOM } from '../lib/canvas-view';
@@ -22,6 +22,8 @@ let stageHandlers: {
     target: { getStage: () => unknown };
   }) => void;
 } = {};
+
+const shapeProps: Record<string, { x: number; y: number }> = {};
 
 vi.mock('react-konva', () => ({
   Stage: ({
@@ -51,32 +53,39 @@ vi.mock('react-konva', () => ({
 vi.mock('./table-shape', () => ({
   default: ({
     table,
+    x,
+    y,
     onDragEnd,
     onResize,
     onResizeEnd,
     onEditRequest
   }: {
     table: Table;
+    x: number;
+    y: number;
     onDragEnd: (id: string, x: number, y: number) => void;
     onResize: (id: string, width: number, height: number) => void;
     onResizeEnd: (id: string, width: number, height: number) => void;
     onEditRequest: (table: Table) => void;
-  }) => (
-    <div data-testid={`shape-${table.id}`}>
-      <button type='button' onClick={() => onDragEnd(table.id, 400, 300)}>
-        drag-end
-      </button>
-      <button type='button' onClick={() => onResize(table.id, 200, 150)}>
-        resize-move
-      </button>
-      <button type='button' onClick={() => onResizeEnd(table.id, 200, 150)}>
-        resize-end
-      </button>
-      <button type='button' onClick={() => onEditRequest(table)}>
-        {`edit-${table.id}`}
-      </button>
-    </div>
-  )
+  }) => {
+    shapeProps[table.id] = { x, y };
+    return (
+      <div data-testid={`shape-${table.id}`}>
+        <button type='button' onClick={() => onDragEnd(table.id, 400, 300)}>
+          drag-end
+        </button>
+        <button type='button' onClick={() => onResize(table.id, 200, 150)}>
+          resize-move
+        </button>
+        <button type='button' onClick={() => onResizeEnd(table.id, 200, 150)}>
+          resize-end
+        </button>
+        <button type='button' onClick={() => onEditRequest(table)}>
+          {`edit-${table.id}`}
+        </button>
+      </div>
+    );
+  }
 }));
 
 const table: Table = {
@@ -97,6 +106,7 @@ const table: Table = {
 
 beforeEach(() => {
   stageHandlers = {};
+  Object.keys(shapeProps).forEach((key) => delete shapeProps[key]);
 });
 
 describe('TableMapCanvas drag/resize persistence', () => {
@@ -166,6 +176,44 @@ describe('TableMapCanvas drag/resize persistence', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'edit-t1' }));
     expect(onEditRequest).toHaveBeenCalledWith(table);
+  });
+
+  it('dragging one table updates only that table (other tables remain unchanged)', async () => {
+    const onUpdateTable = vi.fn();
+    const tableB: Table = {
+      ...table,
+      id: 't2',
+      name: 'T2',
+      positionX: 0.6,
+      positionY: 0.6
+    };
+
+    render(
+      <TableMapCanvas
+        tables={[table, tableB]}
+        editing
+        onUpdateTable={onUpdateTable}
+        onSelectTable={() => {}}
+        onEditRequest={() => {}}
+        onDeleteRequest={() => {}}
+      />
+    );
+
+    // Both tables render at their own independent positions.
+    const bInitialX = shapeProps['t2'].x; // 0.6 * 800 = 480
+    expect(shapeProps['t1'].x).not.toBe(shapeProps['t2'].x);
+
+    // Drag table A's body to (400, 300) → percent (0.5, 0.5).
+    await userEvent.click(
+      within(screen.getByTestId('shape-t1')).getByRole('button', { name: 'drag-end' })
+    );
+
+    expect(onUpdateTable).toHaveBeenCalledTimes(1);
+    expect(onUpdateTable).toHaveBeenCalledWith('t1', { positionX: 0.5, positionY: 0.5 });
+    // Table B must never receive a position update.
+    expect(onUpdateTable.mock.calls.every(([id]) => id !== 't2')).toBe(true);
+    // Table B's rendered position is untouched.
+    expect(shapeProps['t2'].x).toBe(bInitialX);
   });
 });
 

@@ -13,15 +13,8 @@ import {
   zonesControllerUpdate,
   type UpdateTableLayoutDto
 } from '@/api-client';
+import { computeDefaultPlacement, DEFAULT_TABLE_SIZE } from '../lib/layout';
 import type { CreateTableInput, Table, UpdateTableInput, UpdateZoneInput, Zone } from './types';
-
-/** Default placement (percentages, canvas center) for a newly created table. */
-const DEFAULT_LAYOUT: UpdateTableLayoutDto = {
-  positionX: 0.5,
-  positionY: 0.5,
-  width: 0.16,
-  height: 0.16
-};
 
 /**
  * Extract a human-readable message from a generated-client error. NestJS error
@@ -81,7 +74,8 @@ export async function updateTableLayout(id: string, layout: UpdateTableLayoutDto
 /**
  * Create a table and place it in a zone. POST /tables only accepts
  * `{ name, capacity }`; shape + zone + position are set via the layout
- * endpoint, so this performs both calls.
+ * endpoint, so this performs both calls. The default position is computed to
+ * avoid overlapping tables already placed in the same zone.
  */
 export async function createTable(input: CreateTableInput): Promise<Table> {
   const { data, error } = await tablesControllerCreate({
@@ -93,10 +87,37 @@ export async function createTable(input: CreateTableInput): Promise<Table> {
   }
 
   const created = data as Table;
+
+  // Pick a non-overlapping default spot based on what's already in the zone.
+  let placement = { positionX: 0.5, positionY: 0.5 };
+  try {
+    const all = await getTables();
+    const placedInZone = all
+      .filter(
+        (t) =>
+          t.zoneId === input.zoneId &&
+          t.positionX !== null &&
+          t.positionY !== null &&
+          t.width !== null &&
+          t.height !== null
+      )
+      .map((t) => ({
+        positionX: t.positionX as number,
+        positionY: t.positionY as number,
+        width: t.width as number,
+        height: t.height as number
+      }));
+    placement = computeDefaultPlacement(placedInZone);
+  } catch {
+    // Fall back to the center default if existing tables can't be read.
+  }
+
   return updateTableLayout(created.id, {
     zoneId: input.zoneId,
     shape: input.shape,
-    ...DEFAULT_LAYOUT
+    width: DEFAULT_TABLE_SIZE.width,
+    height: DEFAULT_TABLE_SIZE.height,
+    ...placement
   });
 }
 

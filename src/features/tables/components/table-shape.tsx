@@ -12,6 +12,12 @@ const MIN_SIZE_PX = 40;
 const DISABLED_OPACITY = 0.35;
 const BLOCKED_MESSAGE = 'No se puede editar o eliminar una mesa reservada u ocupada';
 
+/** Set the pointer cursor on the stage container (Konva cursor-on-hover pattern). */
+function setStageCursor(node: Konva.Node, cursor: string): void {
+  const stage = node.getStage();
+  if (stage) stage.container().style.cursor = cursor;
+}
+
 interface TableShapeProps {
   table: Table;
   x: number;
@@ -96,7 +102,22 @@ export default function TableShape({
           onSelect(table);
         }
       }}
-      onDragEnd={(e) => onDragEnd(table.id, e.target.x(), e.target.y())}
+      onMouseEnter={(e) => {
+        if (editing) setStageCursor(e.target, 'grab');
+      }}
+      onMouseLeave={(e) => {
+        setStageCursor(e.target, 'default');
+      }}
+      onDragStart={(e) => {
+        setStageCursor(e.target, 'grabbing');
+      }}
+      onDragEnd={(e) => {
+        setStageCursor(e.target, 'grab');
+        // Only persist a move when the body itself was dragged. A resize handle
+        // drag bubbles `dragend` up from the child, so guard on the target.
+        if (e.target !== e.currentTarget) return;
+        onDragEnd(table.id, e.target.x(), e.target.y());
+      }}
     >
       {shape === 'circle' ? (
         <Circle
@@ -206,10 +227,18 @@ export default function TableShape({
             onTap={(e) => {
               e.cancelBubble = true;
             }}
-            onDragStart={() => {
+            onMouseEnter={(e) => {
+              setStageCursor(e.target, 'nwse-resize');
+            }}
+            onDragStart={(e) => {
+              // The handle lives inside the draggable body group; cancel bubbling
+              // so Konva never treats this as a body drag.
+              e.cancelBubble = true;
+              setStageCursor(e.target, 'nwse-resize');
               draggingRef.current = true;
             }}
             onDragMove={(e) => {
+              e.cancelBubble = true;
               const half = HANDLE_SIZE / 2;
               onResize(
                 table.id,
@@ -218,6 +247,8 @@ export default function TableShape({
               );
             }}
             onDragEnd={(e) => {
+              e.cancelBubble = true;
+              setStageCursor(e.target, 'grab');
               draggingRef.current = false;
               const half = HANDLE_SIZE / 2;
               onResizeEnd(
