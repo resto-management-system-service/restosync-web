@@ -23,6 +23,7 @@ import AddTableSheet from './add-table-sheet';
 import CanvasResizeHandle from './canvas-resize-handle';
 import DeleteTableDialog from './delete-table-dialog';
 import DeleteZoneDialog from './delete-zone-dialog';
+import StatusLegend from './status-legend';
 import ZoneTabs from './zone-tabs';
 
 const TableMapCanvas = dynamic(() => import('./table-map-canvas'), {
@@ -143,6 +144,8 @@ export default function FloorPlanView() {
           </Button>
         </div>
       </div>
+
+      <StatusLegend />
 
       <div className='rounded-lg border'>
         <div className='relative' data-testid='canvas-container' style={{ height: canvasHeight }}>

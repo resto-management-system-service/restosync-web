@@ -78,10 +78,29 @@ describe('computeDefaultPlacement', () => {
 });
 
 describe('chairOffsets', () => {
-  it('produces capacity-many chair positions', () => {
+  it('distributes circle chairs evenly in a ring', () => {
     expect(chairOffsets('circle', 6, 100, 100)).toHaveLength(6);
-    expect(chairOffsets('square', 8, 120, 90)).toHaveLength(8);
+
+    const positions = chairOffsets('circle', 4, 100, 100);
+    positions.forEach((p) => {
+      const distance = Math.hypot(p.x - 50, p.y - 50);
+      expect(distance).toBeCloseTo(60, 10); // radius 50 + gap 10
+    });
+  });
+
+  it('places square/rounded chairs one per side, capped at 4', () => {
+    expect(chairOffsets('square', 8, 100, 100)).toHaveLength(4);
+    expect(chairOffsets('square', 3, 100, 100)).toHaveLength(3);
+    expect(chairOffsets('rounded', 2, 100, 100)).toHaveLength(2);
     expect(chairOffsets('rounded', 4, 100, 100)).toHaveLength(4);
+  });
+
+  it('centers square chairs on each side (top, right, bottom, left)', () => {
+    const [top, right, bottom, left] = chairOffsets('square', 4, 100, 100);
+    expect(top).toEqual({ x: 50, y: -10 });
+    expect(right).toEqual({ x: 110, y: 50 });
+    expect(bottom).toEqual({ x: 50, y: 110 });
+    expect(left).toEqual({ x: -10, y: 50 });
   });
 });
 

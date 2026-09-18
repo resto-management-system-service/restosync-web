@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-it('pre-fills a sensible next code suggestion (reusing gaps) and remains editable', async () => {
+it('pre-fills the next code suggestion read-only (reusing gaps) and keeps name editable', async () => {
   const onCreated = vi.fn();
   vi.mocked(createZone).mockResolvedValue(zone('z-new', '2'));
 
@@ -40,15 +40,14 @@ it('pre-fills a sensible next code suggestion (reusing gaps) and remains editabl
 
   await userEvent.click(screen.getByRole('button', { name: /agregar zona/i }));
 
-  const codeInput = screen.getByLabelText(/código de la zona/i);
-  expect(codeInput).toHaveValue('2');
+  // Code is shown read-only — no editable input for it.
+  expect(screen.getByTestId('zone-code-readonly')).toHaveTextContent('2');
+  expect(screen.queryByLabelText(/código de la zona/i)).not.toBeInTheDocument();
 
-  await userEvent.clear(codeInput);
-  await userEvent.type(codeInput, 'T');
   await userEvent.type(screen.getByLabelText(/nombre de la zona/i), 'Terraza');
   await userEvent.click(screen.getByRole('button', { name: /guardar zona/i }));
 
-  await waitFor(() => expect(createZone).toHaveBeenCalledWith({ name: 'Terraza', code: 'T' }));
+  await waitFor(() => expect(createZone).toHaveBeenCalledWith({ name: 'Terraza', code: '2' }));
 });
 
 it('suggests "1" for a restaurant with no numeric zone codes', async () => {
@@ -56,7 +55,7 @@ it('suggests "1" for a restaurant with no numeric zone codes', async () => {
 
   await userEvent.click(screen.getByRole('button', { name: /agregar zona/i }));
 
-  expect(screen.getByLabelText(/código de la zona/i)).toHaveValue('1');
+  expect(screen.getByTestId('zone-code-readonly')).toHaveTextContent('1');
 });
 
 it('surfaces the backend duplicate-code message via toast', async () => {

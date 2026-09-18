@@ -178,6 +178,16 @@ it('renders only the active zone tables and switches zones', async () => {
   expect(screen.queryByText('T1')).not.toBeInTheDocument();
 });
 
+it('renders the status legend with three badges', () => {
+  renderView();
+
+  for (const label of ['Libre', 'Reservada', 'Ocupada']) {
+    const el = screen.getByText(label);
+    expect(el).toBeInTheDocument();
+    expect(el.closest('[data-slot="badge"]')).toBeInTheDocument();
+  }
+});
+
 it('selects exactly one table at a time and deselects on empty canvas', async () => {
   renderView();
   await screen.findByText('T1');
@@ -248,7 +258,7 @@ it('opens the edit sheet from the panel and closes on cancel', async () => {
   await userEvent.click(await screen.findByRole('button', { name: 'editar-T1' }));
 
   expect(await screen.findByText('Editar mesa')).toBeInTheDocument();
-  expect(screen.getByLabelText(/nombre/i)).toHaveValue('T1');
+  expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('T1');
 
   await userEvent.click(screen.getByRole('button', { name: /cancelar/i }));
   await waitFor(() => expect(screen.queryByText('Editar mesa')).not.toBeInTheDocument());
@@ -264,12 +274,13 @@ it('submits an edit via updateTable and closes on success', async () => {
   await userEvent.click(await screen.findByRole('button', { name: 'editar-T1' }));
 
   await screen.findByText('Editar mesa');
-  await userEvent.clear(screen.getByLabelText(/nombre/i));
-  await userEvent.type(screen.getByLabelText(/nombre/i), 'T1-A');
+  // Name is read-only; change capacity (the only editable field).
+  await userEvent.click(screen.getByLabelText(/capacidad/i));
+  await userEvent.click(await screen.findByRole('option', { name: '8 personas' }));
   await userEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
 
   await waitFor(() => expect(screen.queryByText('Editar mesa')).not.toBeInTheDocument());
-  expect(mocks.updateTable).toHaveBeenCalledWith('t1', { name: 'T1-A', capacity: 4 });
+  expect(mocks.updateTable).toHaveBeenCalledWith('t1', { name: 'T1', capacity: 8 });
 });
 
 it('resets the canvas (zoom/pan) when the zone changes', async () => {
@@ -322,6 +333,7 @@ it('renames a zone via the dropdown (pre-filled, calls updateZone)', async () =>
 
   const input = await screen.findByLabelText(/nuevo nombre/i);
   expect(input).toHaveValue('Piso 1');
+  expect(screen.getByTestId('zone-code-readonly')).toHaveTextContent('1');
 
   await userEvent.clear(input);
   await userEvent.type(input, 'Planta Baja');

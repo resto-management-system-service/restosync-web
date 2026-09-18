@@ -215,6 +215,17 @@ describe('TableMapCanvas selection', () => {
     expect(state.overlay.rect).toEqual({ x: 100, y: 100, width: 100, height: 100 });
   });
 
+  it('locates the rim node (not the chair-including group) for selection/resize', () => {
+    const node = { getClientRect: vi.fn(() => ({ x: 100, y: 100, width: 100, height: 100 })) };
+    state.mockStage.findOne.mockReturnValue(node);
+
+    renderCanvas({ selectedTableId: 't1' });
+
+    // The group's getClientRect includes chairs (~14px outside the rim); the
+    // selection box and resize math must target the rim node instead.
+    expect(state.mockStage.findOne).toHaveBeenCalledWith('#table-rim-t1');
+  });
+
   it('recomputes the overlay position after a zoom/pan change', () => {
     const node = { getClientRect: vi.fn(() => ({ x: 100, y: 100, width: 100, height: 100 })) };
     state.mockStage.findOne.mockReturnValue(node);

@@ -41,28 +41,39 @@ export default function RenameZoneInput({ zone, onDone }: RenameZoneInputProps) 
   };
 
   return (
-    <div className='flex items-center gap-1 px-1'>
-      <Input
-        ref={inputRef}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
-          if (e.key === 'Escape') onDone();
-        }}
-        aria-label='Nuevo nombre de la zona'
-        className='h-7 w-28'
-      />
-      <Button
-        type='button'
-        size='icon'
-        className='size-7'
-        isLoading={mutation.isPending}
-        onClick={submit}
-        aria-label='Guardar nombre'
-      >
-        <Icons.check className='h-3.5 w-3.5' />
-      </Button>
+    <div className='flex flex-col gap-1 px-1'>
+      <div className='flex items-center gap-1'>
+        <Input
+          ref={inputRef}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit();
+            if (e.key === 'Escape') onDone();
+          }}
+          aria-label='Nuevo nombre de la zona'
+          className='h-7 w-28'
+        />
+        <div
+          data-testid='zone-code-readonly'
+          className='flex h-7 w-10 items-center justify-center rounded border border-input bg-muted text-xs font-medium text-muted-foreground'
+        >
+          {zone.code}
+        </div>
+        <Button
+          type='button'
+          size='icon'
+          className='size-7'
+          isLoading={mutation.isPending}
+          onClick={submit}
+          aria-label='Guardar nombre'
+        >
+          <Icons.check className='h-3.5 w-3.5' />
+        </Button>
+      </div>
+      <p className='text-xs text-muted-foreground'>
+        El código se asigna automático — no se puede editar.
+      </p>
     </div>
   );
 }
