@@ -71,9 +71,9 @@ it('positions the options tab with a gap from the selection box edge', () => {
   renderOverlay();
 
   const tab = screen.getByTestId('selection-tab');
-  // TAB_OFFSET (12px) gap to the right of the selection box's right edge.
+  // TAB_OFFSET (20px) gap to the right of the selection box's right edge.
   const gap = parseFloat(tab.style.left) - rect.width;
-  expect(gap).toBe(12);
+  expect(gap).toBe(20);
 });
 
 it('opens the panel on tab hover without any click', async () => {
@@ -144,5 +144,25 @@ it('drives resize through the corner handles with canvas-coordinate pointers', a
   expect(onResizeMove).toHaveBeenCalledWith('br', { x: 300, y: 300 });
 
   pointer('pointerup', 300, 300);
+  expect(onResizeEnd).toHaveBeenCalledWith('br', { x: 300, y: 300 });
+});
+
+it('applies the resize on the first gesture (no stale active-corner closure)', () => {
+  const { onResizeStart, onResizeMove, onResizeEnd } = renderOverlay();
+  const handle = screen.getByTestId('resize-handle-br');
+
+  // Dispatch the full pointer sequence back-to-back (raw, no act flush) to
+  // simulate a fast drag where pointermove/up can arrive before a re-render.
+  const fire = (type: string, clientX: number, clientY: number) =>
+    handle.dispatchEvent(
+      new MouseEvent(type, { clientX, clientY, bubbles: true, cancelable: true })
+    );
+
+  fire('pointerdown', 260, 240);
+  fire('pointermove', 300, 300);
+  fire('pointerup', 300, 300);
+
+  expect(onResizeStart).toHaveBeenCalledWith('br');
+  expect(onResizeMove).toHaveBeenCalledWith('br', { x: 300, y: 300 });
   expect(onResizeEnd).toHaveBeenCalledWith('br', { x: 300, y: 300 });
 });

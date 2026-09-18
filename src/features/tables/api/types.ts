@@ -57,6 +57,8 @@ export interface CreateTableInput {
   capacity: number;
   shape: TableShape;
   zoneId: string;
+  /** Canvas pixel dimensions, used to compute an initially-square default size. */
+  canvasSize: { width: number; height: number };
 }
 
 /** Fields editable via PATCH /tables/:id (name + capacity only; shape is layout-only). */

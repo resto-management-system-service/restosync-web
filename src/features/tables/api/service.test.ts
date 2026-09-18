@@ -79,7 +79,13 @@ describe('tables service', () => {
     api.tablesControllerCreate.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
     api.tablesControllerUpdateLayout.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
 
-    await createTable({ name: 'T20', capacity: 4, shape: 'circle', zoneId: 'z1' });
+    await createTable({
+      name: 'T20',
+      capacity: 4,
+      shape: 'circle',
+      zoneId: 'z1',
+      canvasSize: { width: 1000, height: 1000 }
+    });
 
     expect(api.tablesControllerCreate).toHaveBeenCalledWith({
       body: { name: 'T20', capacity: 4 }
@@ -95,6 +101,27 @@ describe('tables service', () => {
         height: 0.16
       }
     });
+  });
+
+  it('computes an initially-square size for a non-square canvas (Bug 3)', async () => {
+    api.tablesControllerCreate.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+    api.tablesControllerUpdateLayout.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+
+    // 600x260 canvas: equal percentages would render as a 96x41.6 rectangle.
+    await createTable({
+      name: 'T20',
+      capacity: 4,
+      shape: 'square',
+      zoneId: 'z1',
+      canvasSize: { width: 600, height: 260 }
+    });
+
+    const body = api.tablesControllerUpdateLayout.mock.calls[0][0].body;
+    // width = 0.16 (of 600 = 96px); height = 96/260 ≈ 0.3692 so the table is square.
+    expect(body.width).toBeCloseTo(0.16, 10);
+    expect(body.height).toBeCloseTo((0.16 * 600) / 260, 10);
+    // equal pixel dimensions
+    expect(body.width * 600).toBeCloseTo(body.height * 260, 10);
   });
 
   it('places a new table at a different position than an existing table in the same zone', async () => {
@@ -114,7 +141,13 @@ describe('tables service', () => {
       error: undefined
     });
 
-    await createTable({ name: 'T20', capacity: 4, shape: 'circle', zoneId: 'z1' });
+    await createTable({
+      name: 'T20',
+      capacity: 4,
+      shape: 'circle',
+      zoneId: 'z1',
+      canvasSize: { width: 1000, height: 1000 }
+    });
 
     const body = api.tablesControllerUpdateLayout.mock.calls[0][0].body;
     expect(body.positionX).not.toBe(0.5);
@@ -212,7 +245,13 @@ describe('tables service', () => {
     });
 
     await expect(
-      createTable({ name: '101', capacity: 4, shape: 'circle', zoneId: 'z1' })
+      createTable({
+        name: '101',
+        capacity: 4,
+        shape: 'circle',
+        zoneId: 'z1',
+        canvasSize: { width: 1000, height: 1000 }
+      })
     ).rejects.toThrow('Table name "101" already exists');
   });
 

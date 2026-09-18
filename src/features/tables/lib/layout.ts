@@ -21,6 +21,23 @@ export function pixelToPercent(pixels: number, dimension: number): number {
 /** Default width/height (percentages) assigned to a newly created table. */
 export const DEFAULT_TABLE_SIZE = { width: 0.16, height: 0.16 };
 
+/**
+ * Compute a default table size (as width/height percentages) that renders as a
+ * SQUARE in pixels on a canvas with the given pixel dimensions. Width is stored
+ * as a fraction of canvas width and height as a fraction of canvas height, so
+ * equal fractions only render square when the canvas itself is square. By
+ * targeting a fixed fraction of the canvas width and deriving the height from
+ * the pixel size, a "square" table renders square regardless of aspect ratio.
+ */
+export function computeSquareSize(canvasSize: { width: number; height: number }): {
+  width: number;
+  height: number;
+} {
+  if (canvasSize.width <= 0 || canvasSize.height <= 0) return DEFAULT_TABLE_SIZE;
+  const pixelSize = DEFAULT_TABLE_SIZE.width * canvasSize.width;
+  return { width: DEFAULT_TABLE_SIZE.width, height: pixelSize / canvasSize.height };
+}
+
 /** Gap (percentages) left between auto-placed tables so they never overlap. */
 const AUTO_PLACE_GAP = 0.08;
 
@@ -48,11 +65,14 @@ export function rectsOverlap(a: PlacedRect, b: PlacedRect): boolean {
  * the first open cell; if every cell is occupied it cascades diagonally from the
  * last placed table (clamped to the canvas). Simple by design — no bin packing.
  */
-export function computeDefaultPlacement(existing: PlacedRect[]): {
+export function computeDefaultPlacement(
+  existing: PlacedRect[],
+  size: { width: number; height: number } = DEFAULT_TABLE_SIZE
+): {
   positionX: number;
   positionY: number;
 } {
-  const { width, height } = DEFAULT_TABLE_SIZE;
+  const { width, height } = size;
   const stepX = width + AUTO_PLACE_GAP;
   const stepY = height + AUTO_PLACE_GAP;
 
