@@ -35,9 +35,10 @@ function parseZoneName(name: string): { text: string; number: number | null } {
 
 /**
  * Compute the final zone name for a category, appending the next sequential
- * number for that category (case-insensitive text match). Used to preview and
- * auto-number new zones like "Piso 3" when "Piso 1"/"Piso 2" already exist,
- * or "Terraza 1" for a never-used name. Returns the empty string for blank
+ * number for that category (case-insensitive text match). The number is the
+ * smallest positive integer not already in use among same-category zones, so
+ * gaps left by deleted zones are reused (e.g. "Piso 1" + "Piso 3" → "Piso 2"),
+ * mirroring the table-name suggestion logic. Returns the empty string for blank
  * input.
  */
 export function computeNextZoneName(existingZoneNames: string[], typedText: string): string {
@@ -45,13 +46,16 @@ export function computeNextZoneName(existingZoneNames: string[], typedText: stri
   if (!typed) return '';
 
   const typedKey = typed.toLowerCase();
-  let max = 0;
+  const used = new Set<number>();
   for (const name of existingZoneNames) {
     const parsed = parseZoneName(name);
     if (parsed.text.toLowerCase() === typedKey && parsed.number !== null) {
-      max = Math.max(max, parsed.number);
+      used.add(parsed.number);
     }
   }
 
-  return `${typed} ${max + 1}`;
+  let next = 1;
+  while (used.has(next)) next += 1;
+
+  return `${typed} ${next}`;
 }

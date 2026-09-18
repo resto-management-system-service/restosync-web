@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
+import { getQueryClient } from '@/lib/query-client';
 import type { Table, Zone } from './types';
 
 vi.mock('./service', () => ({
@@ -13,7 +14,12 @@ vi.mock('./service', () => ({
 }));
 
 import { getNextTableName, getTables, getZones } from './service';
-import { nextTableNameQueryOptions, tablesQueryOptions, zonesQueryOptions } from './tables.queries';
+import {
+  nextTableNameQueryOptions,
+  tablesQueryOptions,
+  updateTableLayoutMutation,
+  zonesQueryOptions
+} from './tables.queries';
 
 const table = (id: string, name: string): Table => ({
   id,
@@ -79,5 +85,51 @@ describe('tables query options', () => {
 
     expect(data).toBe('102');
     expect(getNextTableName).toHaveBeenCalledWith('z1');
+  });
+});
+
+describe('updateTableLayoutMutation optimistic update', () => {
+  it('applies the new layout to the tables cache synchronously (no stale gap after resize)', async () => {
+    const client = getQueryClient();
+    client.setQueryData(['tables', 'list'], [table('t1', 'T1')]);
+
+    await updateTableLayoutMutation.onMutate?.(
+      {
+        id: 't1',
+        layout: { width: 0.4, height: 0.4, positionX: 0.3, positionY: 0.3 }
+      },
+      { client, meta: undefined }
+    );
+
+    const cached = client.getQueryData<Table[]>(['tables', 'list']);
+    expect(cached?.[0].width).toBe(0.4);
+    expect(cached?.[0].height).toBe(0.4);
+    expect(cached?.[0].positionX).toBe(0.3);
+    expect(cached?.[0].positionY).toBe(0.3);
+    // Fields not part of the layout update are preserved.
+    expect(cached?.[0].name).toBe('T1');
+    expect(cached?.[0].shape).toBe('circle');
+
+    client.removeQueries({ queryKey: ['tables', 'list'] });
+  });
+
+  it('leaves other tables untouched when updating a single table', async () => {
+    const client = getQueryClient();
+    client.setQueryData(['tables', 'list'], [table('t1', 'T1'), table('t2', 'T2')]);
+
+    await updateTableLayoutMutation.onMutate?.(
+      {
+        id: 't1',
+        layout: { width: 0.4, height: 0.4 }
+      },
+      { client, meta: undefined }
+    );
+
+    const cached = client.getQueryData<Table[]>(['tables', 'list']);
+    expect(cached?.[0].width).toBe(0.4);
+    expect(cached?.[1].width).toBe(0.16);
+    expect(cached?.[1].name).toBe('T2');
+
+    client.removeQueries({ queryKey: ['tables', 'list'] });
   });
 });

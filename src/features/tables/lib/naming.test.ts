@@ -29,8 +29,16 @@ describe('computeNextZoneName', () => {
     expect(computeNextZoneName(['Piso 1', 'Piso 2'], 'Terraza')).toBe('Terraza 1');
   });
 
-  it('takes the max number + 1 for the matching category', () => {
+  it('takes the next sequential number for the matching category', () => {
     expect(computeNextZoneName(['Piso 1', 'Piso 2'], 'Piso')).toBe('Piso 3');
+  });
+
+  it('reuses a gap left by a deleted zone (Piso 2 deleted)', () => {
+    expect(computeNextZoneName(['Piso 1', 'Piso 3'], 'Piso')).toBe('Piso 2');
+  });
+
+  it('reuses the lowest freed number, not just the last gap', () => {
+    expect(computeNextZoneName(['Piso 2', 'Piso 5'], 'Piso')).toBe('Piso 1');
   });
 
   it('matches the text part case-insensitively', () => {

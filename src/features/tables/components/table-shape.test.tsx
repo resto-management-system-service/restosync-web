@@ -44,6 +44,7 @@ const textProps: Record<
 
 const shapeIds: string[] = [];
 const shapeListening: Record<string, boolean | undefined> = {};
+const shapeCornerRadius: Record<string, number | undefined> = {};
 const chairPositions: Array<{ x: number; y: number }> = [];
 let chairGroupListening: boolean | undefined;
 
@@ -93,16 +94,19 @@ vi.mock('react-konva', () => ({
     id,
     width,
     height,
+    cornerRadius,
     listening
   }: {
     id?: string;
     width?: number;
     height?: number;
+    cornerRadius?: number;
     listening?: boolean;
   }) => {
     if (id) {
       shapeIds.push(id);
       shapeListening[id] = listening;
+      shapeCornerRadius[id] = cornerRadius;
     }
     return <div data-width={width} data-height={height} />;
   },
@@ -165,6 +169,7 @@ beforeEach(() => {
   Object.keys(groupHandlers).forEach((key) => delete groupHandlers[key]);
   Object.keys(textProps).forEach((key) => delete textProps[key]);
   Object.keys(shapeListening).forEach((key) => delete shapeListening[key]);
+  Object.keys(shapeCornerRadius).forEach((key) => delete shapeCornerRadius[key]);
   shapeIds.length = 0;
   chairPositions.length = 0;
   chairGroupListening = undefined;
@@ -191,6 +196,16 @@ it('keeps the table body hit-testable (rim shape must be listening)', () => {
 it('keeps the square rim listening too', () => {
   renderShape({ table: { ...table, shape: 'square' } });
   expect(shapeListening['table-rim-t1']).not.toBe(false);
+});
+
+it('renders a rounded table with rounded corners on the rim', () => {
+  renderShape({ table: { ...table, shape: 'rounded' } });
+  expect(shapeCornerRadius['table-rim-t1']).toBe(8);
+});
+
+it('renders a square table with sharp corners on the rim', () => {
+  renderShape({ table: { ...table, shape: 'square' } });
+  expect(shapeCornerRadius['table-rim-t1']).toBe(0);
 });
 
 it('keeps chairs non-interactive (their group stays listening=false)', () => {
@@ -269,12 +284,12 @@ it('keeps the label centered and scales its font with the shape size', () => {
   expect(label.verticalAlign).toBe('middle');
   expect(label.width).toBe(200);
   expect(label.height).toBe(200);
-  expect(label.fontSize).toBe(computeLabelFontSize(200, 200));
+  expect(label.fontSize).toBe(computeLabelFontSize(200, 200, 'T1'));
 });
 
 it('updates label geometry and chair positions together on resize (no desync)', () => {
   const { rerender } = renderShape({ width: 100, height: 100 });
-  expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(100, 100));
+  expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(100, 100, 'T1'));
   expect(chairPositions).toHaveLength(4);
   const firstChair = chairPositions[0];
 
@@ -291,7 +306,7 @@ it('updates label geometry and chair positions together on resize (no desync)', 
     />
   );
 
-  expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(300, 300));
+  expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(300, 300, 'T1'));
   expect(textProps['T1'].width).toBe(300);
   expect(textProps['T1'].height).toBe(300);
   // The circle chair ring re-derives from the new size (4 more chairs pushed).
