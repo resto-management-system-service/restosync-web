@@ -86,7 +86,7 @@ export default function ZoneTabs({
           );
         })}
       </div>
-      <AddZoneInput onCreated={onZoneCreated} />
+      <AddZoneInput zones={zones} onCreated={onZoneCreated} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chairOffsets,
   computeDefaultPlacement,
+  computeLabelFontSize,
   percentToPixel,
   pixelToPercent,
   rectsOverlap
@@ -81,5 +82,17 @@ describe('chairOffsets', () => {
     expect(chairOffsets('circle', 6, 100, 100)).toHaveLength(6);
     expect(chairOffsets('square', 8, 120, 90)).toHaveLength(8);
     expect(chairOffsets('rounded', 4, 100, 100)).toHaveLength(4);
+  });
+});
+
+describe('computeLabelFontSize', () => {
+  it('scales proportionally to the smaller table dimension', () => {
+    expect(computeLabelFontSize(100, 100)).toBe(30);
+    expect(computeLabelFontSize(200, 200)).toBe(60);
+  });
+
+  it('never drops below the minimum readable size', () => {
+    expect(computeLabelFontSize(10, 10)).toBe(11);
+    expect(computeLabelFontSize(0, 0)).toBe(11);
   });
 });

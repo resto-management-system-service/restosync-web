@@ -3,12 +3,19 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
 import type { Table } from '../api/types';
-import { createTable, updateTable } from '../api/service';
+import { createTable, getNextTableName, updateTable } from '../api/service';
 import AddTableSheet from './add-table-sheet';
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() }
+}));
+
+import { toast } from 'sonner';
 
 vi.mock('../api/service', () => ({
   createTable: vi.fn(),
-  updateTable: vi.fn()
+  updateTable: vi.fn(),
+  getNextTableName: vi.fn()
 }));
 
 const table: Table = {
@@ -29,34 +36,61 @@ const table: Table = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(getNextTableName).mockResolvedValue('102');
 });
 
-it('rejects an empty name and shows the inline error (create mode)', async () => {
+it('pre-fills the suggested name on open (create mode)', async () => {
   const onOpenChange = vi.fn();
   renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
 
+  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
+  expect(getNextTableName).toHaveBeenCalledWith('z1');
+});
+
+it('leaves the suggested name fully editable', async () => {
+  const onOpenChange = vi.fn();
+  vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: 'CUSTOM' } as Table);
+
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
+
+  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
+
+  await userEvent.clear(screen.getByLabelText(/nombre/i));
+  await userEvent.type(screen.getByLabelText(/nombre/i), 'CUSTOM');
+  await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
+
+  await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  expect(createTable).toHaveBeenCalledWith({
+    name: 'CUSTOM',
+    capacity: 4,
+    shape: 'circle',
+    zoneId: 'z1'
+  });
+});
+
+it('rejects an empty name (after clearing the suggestion) with an inline error', async () => {
+  const onOpenChange = vi.fn();
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
+
+  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
+  await userEvent.clear(screen.getByLabelText(/nombre/i));
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
   expect(await screen.findByText(/el nombre es requerido/i)).toBeInTheDocument();
   expect(createTable).not.toHaveBeenCalled();
 });
 
-it('accepts a valid submission and creates the table in the zone', async () => {
+it('surfaces the backend duplicate-name message via toast (not a silent failure)', async () => {
   const onOpenChange = vi.fn();
-  vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: 'T14' } as Table);
+  vi.mocked(createTable).mockRejectedValue(new Error('Table name "102" already exists'));
 
   renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
 
-  await userEvent.type(screen.getByLabelText(/nombre/i), 'T14');
+  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
-  await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
-  expect(createTable).toHaveBeenCalledWith({
-    name: 'T14',
-    capacity: 4,
-    shape: 'circle',
-    zoneId: 'z1'
-  });
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Table name "102" already exists'));
+  expect(onOpenChange).not.toHaveBeenCalledWith(false);
 });
 
 it('pre-fills the form in edit mode and hides the shape field', () => {
@@ -81,4 +115,11 @@ it('submits an edit by calling updateTable (not createTable) with the correct id
   await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   expect(updateTable).toHaveBeenCalledWith('t1', { name: 'T1-A', capacity: 6 });
   expect(createTable).not.toHaveBeenCalled();
+});
+
+it('does not fetch a suggestion in edit mode', () => {
+  const onOpenChange = vi.fn();
+  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={table} zoneId='z1' />);
+
+  expect(getNextTableName).not.toHaveBeenCalled();
 });

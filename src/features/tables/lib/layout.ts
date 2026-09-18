@@ -89,12 +89,30 @@ export const STATUS_COLORS: Record<TableStatus, { fill: string; stroke: string; 
   OCCUPIED: { fill: '#ef4444', stroke: '#b91c1c', label: '#ffffff' }
 };
 
+/** Spanish display label per table status (used in the selection panel header). */
+export const STATUS_LABEL: Record<TableStatus, string> = {
+  AVAILABLE: 'Libre',
+  RESERVED: 'Reservada',
+  OCCUPIED: 'Ocupada'
+};
+
 export const CHAIR_COLOR = { fill: '#f8fafc', stroke: '#94a3b8' };
 
 /** Distance (px) from a table's edge to the center of its chairs. */
 const CHAIR_GAP = 10;
 /** Radius (px) of a chair mark. */
 export const CHAIR_RADIUS = 4;
+
+/** Minimum font size (px) for a table's name label. */
+const MIN_LABEL_FONT_SIZE = 11;
+
+/**
+ * Font size for a table's name label, scaled proportionally to the table's
+ * current size so it grows/shrinks with the shape and never overflows.
+ */
+export function computeLabelFontSize(width: number, height: number): number {
+  return Math.max(MIN_LABEL_FONT_SIZE, Math.min(width, height) * 0.3);
+}
 
 interface Point {
   x: number;

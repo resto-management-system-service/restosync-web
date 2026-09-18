@@ -1,6 +1,8 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +15,11 @@ import {
 } from '@/components/ui/sheet';
 import * as z from 'zod';
 import type { Table } from '../api/types';
-import { createTableMutation, updateTableMutation } from '../api/tables.queries';
+import {
+  createTableMutation,
+  nextTableNameQueryOptions,
+  updateTableMutation
+} from '../api/tables.queries';
 import {
   tableLayoutFormDefaults,
   tableLayoutFormSchema,
@@ -59,14 +65,16 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
     onSuccess: () => {
       form.reset();
       onOpenChange(false);
-    }
+    },
+    onError: (error) => toast.error(error.message)
   });
 
   const updateMutation = useMutation({
     ...updateTableMutation,
     onSuccess: () => {
       onOpenChange(false);
-    }
+    },
+    onError: (error) => toast.error(error.message)
   });
 
   const form = useAppForm({
@@ -80,6 +88,25 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
       }
     }
   });
+
+  // Fetch a suggested name on-demand when the create sheet opens. gcTime: 0 +
+  // staleTime: 0 means the suggestion is freshly computed each time it opens.
+  const nextNameQuery = useQuery({
+    ...nextTableNameQueryOptions(zoneId),
+    enabled: open && !isEdit && !!zoneId
+  });
+
+  // Start from a clean form each time the create sheet opens.
+  useEffect(() => {
+    if (open && !isEdit) form.reset();
+  }, [open, isEdit, form]);
+
+  // Pre-fill the suggested name once it arrives (still fully editable).
+  useEffect(() => {
+    if (open && !isEdit && nextNameQuery.data) {
+      form.setFieldValue('name', nextNameQuery.data);
+    }
+  }, [open, isEdit, nextNameQuery.data, form]);
 
   const { FormTextField, FormSelectField } = useFormFields<TableLayoutFormValues>();
 

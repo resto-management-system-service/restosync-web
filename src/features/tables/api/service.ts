@@ -9,12 +9,22 @@ import {
   tablesControllerUpdateLayout,
   zonesControllerCreate,
   zonesControllerFindAll,
+  zonesControllerGetNextTableName,
   zonesControllerRemove,
   zonesControllerUpdate,
-  type UpdateTableLayoutDto
+  type CreateZoneDto,
+  type UpdateTableLayoutDto,
+  type UpdateZoneDto
 } from '@/api-client';
 import { computeDefaultPlacement, DEFAULT_TABLE_SIZE } from '../lib/layout';
-import type { CreateTableInput, Table, UpdateTableInput, UpdateZoneInput, Zone } from './types';
+import type {
+  CreateTableInput,
+  CreateZoneInput,
+  Table,
+  UpdateTableInput,
+  UpdateZoneInput,
+  Zone
+} from './types';
 
 /**
  * Extract a human-readable message from a generated-client error. NestJS error
@@ -83,7 +93,7 @@ export async function createTable(input: CreateTableInput): Promise<Table> {
   });
 
   if (error) {
-    throw new Error(`Failed to create table: ${JSON.stringify(error)}`);
+    throw new Error(extractApiMessage(error, 'Failed to create table'));
   }
 
   const created = data as Table;
@@ -142,36 +152,52 @@ export async function updateTable(id: string, input: UpdateTableInput): Promise<
   });
 
   if (error) {
-    throw new Error(`Failed to update table: ${JSON.stringify(error)}`);
+    throw new Error(extractApiMessage(error, 'Failed to update table'));
   }
 
   return data as Table;
 }
 
 /**
- * Create a new zone for the current restaurant.
+ * Suggest the next available table name for a zone (gap-reusing, e.g. zone
+ * code "1" with "101"/"103" existing suggests "102"). GET /zones/:id/next-table-name.
  */
-export async function createZone(name: string): Promise<Zone> {
-  const { data, error } = await zonesControllerCreate({ body: { name } });
+export async function getNextTableName(zoneId: string): Promise<string> {
+  const { data, error } = await zonesControllerGetNextTableName({ path: { id: zoneId } });
 
   if (error) {
-    throw new Error(`Failed to create zone: ${JSON.stringify(error)}`);
+    throw new Error(extractApiMessage(error, 'Failed to suggest table name'));
+  }
+
+  return (data as { suggestedName?: string } | undefined)?.suggestedName ?? '';
+}
+
+/**
+ * Create a new zone for the current restaurant.
+ */
+export async function createZone(input: CreateZoneInput): Promise<Zone> {
+  const body: CreateZoneDto = { name: input.name, code: input.code };
+  const { data, error } = await zonesControllerCreate({ body });
+
+  if (error) {
+    throw new Error(extractApiMessage(error, 'Failed to create zone'));
   }
 
   return data as Zone;
 }
 
 /**
- * Rename a zone via PATCH /zones/:id.
+ * Rename/recode a zone via PATCH /zones/:id.
  */
 export async function updateZone(id: string, input: UpdateZoneInput): Promise<Zone> {
-  const { data, error } = await zonesControllerUpdate({
-    path: { id },
-    body: { name: input.name }
-  });
+  const body: UpdateZoneDto = {};
+  if (input.name !== undefined) body.name = input.name;
+  if (input.code !== undefined) body.code = input.code;
+
+  const { data, error } = await zonesControllerUpdate({ path: { id }, body });
 
   if (error) {
-    throw new Error(`Failed to update zone: ${JSON.stringify(error)}`);
+    throw new Error(extractApiMessage(error, 'Failed to update zone'));
   }
 
   return data as Zone;

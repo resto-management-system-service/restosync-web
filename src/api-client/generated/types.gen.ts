@@ -354,6 +354,10 @@ export type CreateZoneDto = {
      */
     name: string;
     /**
+     * Short alphanumeric zone code used as a table-name prefix, e.g. "1", "2", "T", "VIP"
+     */
+    code: string;
+    /**
      * Sort order for display
      */
     sortOrder?: number;
@@ -364,6 +368,10 @@ export type UpdateZoneDto = {
      * Zone name, e.g. "Piso 1" or "Terraza"
      */
     name?: string;
+    /**
+     * Short alphanumeric zone code used as a table-name prefix, e.g. "1", "2", "T", "VIP"
+     */
+    code?: string;
     /**
      * Sort order for display
      */
@@ -1793,6 +1801,29 @@ export type ZonesControllerCreateResponses = {
      * Zone created
      */
     201: unknown;
+};
+
+export type ZonesControllerGetNextTableNameData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/zones/{id}/next-table-name';
+};
+
+export type ZonesControllerGetNextTableNameErrors = {
+    /**
+     * Zone not found
+     */
+    404: unknown;
+};
+
+export type ZonesControllerGetNextTableNameResponses = {
+    /**
+     * Suggested table name, e.g. { "suggestedName": "102" }
+     */
+    200: unknown;
 };
 
 export type ZonesControllerRemoveData = {

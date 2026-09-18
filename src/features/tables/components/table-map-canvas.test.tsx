@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Table } from '../api/types';
 import { MAX_ZOOM } from '../lib/canvas-view';
@@ -14,25 +14,66 @@ Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
   get: () => 600
 });
 
-let stageHandlers: {
-  onMouseDown?: (e: { target: { getStage: () => unknown } }) => void;
-  onMouseUp?: (e: { target: { getStage: () => unknown } }) => void;
-  onWheel?: (e: {
-    evt: { preventDefault: () => void; deltaY: number };
-    target: { getStage: () => unknown };
-  }) => void;
-} = {};
+const state = vi.hoisted(() => ({
+  stageHandlers: {} as {
+    onMouseDown?: (e: { target: { getStage: () => unknown } }) => void;
+    onMouseUp?: (e: { target: { getStage: () => unknown } }) => void;
+    onWheel?: (e: {
+      evt: { preventDefault: () => void; deltaY: number };
+      target: { getStage: () => unknown };
+    }) => void;
+  },
+  shapeProps: {} as Record<string, { x: number; y: number }>,
+  overlay: {
+    rect: null as null | { x: number; y: number; width: number; height: number },
+    onResizeStart: null as null | ((corner: string) => void),
+    onResizeMove: null as null | ((corner: string, pointer: { x: number; y: number }) => void),
+    onResizeEnd: null as null | ((corner: string, pointer: { x: number; y: number }) => void)
+  },
+  mockStage: {
+    findOne: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    scaleX: vi.fn(() => 1),
+    x: vi.fn(() => 0),
+    y: vi.fn(() => 0),
+    scale: vi.fn(),
+    position: vi.fn(),
+    draggable: vi.fn(),
+    getPointerPosition: vi.fn(() => ({ x: 400, y: 300 }))
+  }
+}));
 
-const shapeProps: Record<string, { x: number; y: number }> = {};
+vi.mock('./table-selection-overlay', () => ({
+  default: ({
+    rect,
+    onResizeStart,
+    onResizeMove,
+    onResizeEnd
+  }: {
+    rect: { x: number; y: number; width: number; height: number };
+    onResizeStart: (corner: string) => void;
+    onResizeMove: (corner: string, pointer: { x: number; y: number }) => void;
+    onResizeEnd: (corner: string, pointer: { x: number; y: number }) => void;
+  }) => {
+    state.overlay.rect = rect;
+    state.overlay.onResizeStart = onResizeStart;
+    state.overlay.onResizeMove = onResizeMove;
+    state.overlay.onResizeEnd = onResizeEnd;
+    return <div data-testid='selection-overlay' />;
+  }
+}));
 
 vi.mock('react-konva', () => ({
   Stage: ({
     children,
+    ref,
     onMouseDown,
     onMouseUp,
     onWheel
   }: {
     children?: React.ReactNode;
+    ref?: React.Ref<unknown>;
     onMouseDown?: (e: { target: { getStage: () => unknown } }) => void;
     onMouseUp?: (e: { target: { getStage: () => unknown } }) => void;
     onWheel?: (e: {
@@ -40,7 +81,11 @@ vi.mock('react-konva', () => ({
       target: { getStage: () => unknown };
     }) => void;
   }) => {
-    stageHandlers = { onMouseDown, onMouseUp, onWheel };
+    state.stageHandlers = { onMouseDown, onMouseUp, onWheel };
+    if (ref) {
+      if (typeof ref === 'function') ref(state.mockStage);
+      else (ref as React.MutableRefObject<unknown>).current = state.mockStage;
+    }
     return <div data-testid='stage'>{children}</div>;
   },
   Layer: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
@@ -56,32 +101,27 @@ vi.mock('./table-shape', () => ({
     x,
     y,
     onDragEnd,
-    onResize,
-    onResizeEnd,
-    onEditRequest
+    onDragMove,
+    onSelect
   }: {
     table: Table;
     x: number;
     y: number;
     onDragEnd: (id: string, x: number, y: number) => void;
-    onResize: (id: string, width: number, height: number) => void;
-    onResizeEnd: (id: string, width: number, height: number) => void;
-    onEditRequest: (table: Table) => void;
+    onDragMove: (id: string) => void;
+    onSelect: (table: Table) => void;
   }) => {
-    shapeProps[table.id] = { x, y };
+    state.shapeProps[table.id] = { x, y };
     return (
       <div data-testid={`shape-${table.id}`}>
         <button type='button' onClick={() => onDragEnd(table.id, 400, 300)}>
           drag-end
         </button>
-        <button type='button' onClick={() => onResize(table.id, 200, 150)}>
-          resize-move
+        <button type='button' onClick={() => onDragMove(table.id)}>
+          drag-move
         </button>
-        <button type='button' onClick={() => onResizeEnd(table.id, 200, 150)}>
-          resize-end
-        </button>
-        <button type='button' onClick={() => onEditRequest(table)}>
-          {`edit-${table.id}`}
+        <button type='button' onClick={() => onSelect(table)}>
+          select
         </button>
       </div>
     );
@@ -104,39 +144,127 @@ const table: Table = {
   updatedAt: '2026-01-01T00:00:00.000Z'
 };
 
+function renderCanvas(props: Partial<Parameters<typeof TableMapCanvas>[0]> = {}) {
+  return render(
+    <TableMapCanvas
+      tables={[table]}
+      editing
+      selectedTableId={null}
+      onSelectedTableIdChange={() => {}}
+      onUpdateTable={() => {}}
+      onSelectTable={() => {}}
+      onEditRequest={() => {}}
+      onDeleteRequest={() => {}}
+      {...props}
+    />
+  );
+}
+
 beforeEach(() => {
-  stageHandlers = {};
-  Object.keys(shapeProps).forEach((key) => delete shapeProps[key]);
+  vi.clearAllMocks();
+  state.stageHandlers = {};
+  Object.keys(state.shapeProps).forEach((key) => delete state.shapeProps[key]);
+  state.overlay.rect = null;
+  state.overlay.onResizeStart = null;
+  state.overlay.onResizeMove = null;
+  state.overlay.onResizeEnd = null;
+  state.mockStage.scaleX.mockReturnValue(1);
+  state.mockStage.x.mockReturnValue(0);
+  state.mockStage.y.mockReturnValue(0);
+  state.mockStage.getPointerPosition.mockReturnValue({ x: 400, y: 300 });
 });
 
-describe('TableMapCanvas drag/resize persistence', () => {
-  it('persists layout only on drag-end / resize-end, not on resize-move', async () => {
-    const onUpdateTable = vi.fn();
-    render(
-      <TableMapCanvas
-        tables={[table]}
-        editing
-        onUpdateTable={onUpdateTable}
-        onSelectTable={() => {}}
-        onEditRequest={() => {}}
-        onDeleteRequest={() => {}}
-      />
+describe('TableMapCanvas selection', () => {
+  it('selects the clicked table via onSelectedTableIdChange', async () => {
+    const onSelectedTableIdChange = vi.fn();
+    renderCanvas({ onSelectedTableIdChange });
+
+    await userEvent.click(
+      within(screen.getByTestId('shape-t1')).getByRole('button', { name: 'select' })
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'resize-move' }));
+    expect(onSelectedTableIdChange).toHaveBeenCalledWith('t1');
+  });
+
+  it('deselects when clicking empty canvas space (stage itself)', () => {
+    const onSelectedTableIdChange = vi.fn();
+    renderCanvas({ onSelectedTableIdChange });
+
+    const stage = { draggable: vi.fn(), getStage: () => stage };
+    state.stageHandlers.onMouseDown?.({ target: stage });
+
+    expect(onSelectedTableIdChange).toHaveBeenCalledWith(null);
+  });
+
+  it('does not deselect when mousedown starts on a table (not the stage)', () => {
+    const onSelectedTableIdChange = vi.fn();
+    renderCanvas({ onSelectedTableIdChange });
+
+    const stage = { draggable: vi.fn(), getStage: () => stage };
+    state.stageHandlers.onMouseDown?.({ target: { getStage: () => stage } });
+
+    expect(onSelectedTableIdChange).not.toHaveBeenCalled();
+  });
+
+  it('positions the overlay from the node getClientRect (real Konva transform)', () => {
+    const node = { getClientRect: vi.fn(() => ({ x: 100, y: 100, width: 100, height: 100 })) };
+    state.mockStage.findOne.mockReturnValue(node);
+
+    renderCanvas({ selectedTableId: 't1' });
+
+    expect(state.overlay.rect).toEqual({ x: 100, y: 100, width: 100, height: 100 });
+  });
+
+  it('recomputes the overlay position after a zoom/pan change', () => {
+    const node = { getClientRect: vi.fn(() => ({ x: 100, y: 100, width: 100, height: 100 })) };
+    state.mockStage.findOne.mockReturnValue(node);
+
+    renderCanvas({ selectedTableId: 't1' });
+    expect(state.overlay.rect).toEqual({ x: 100, y: 100, width: 100, height: 100 });
+
+    // Simulate the rendered position changing under a zoom/pan transform.
+    node.getClientRect.mockReturnValue({ x: 250, y: 150, width: 200, height: 200 });
+    const wheelListener = state.mockStage.on.mock.calls.find((c) => c[0] === 'wheel')?.[1];
+    act(() => {
+      (wheelListener as () => void)?.();
+    });
+
+    expect(state.overlay.rect).toEqual({ x: 250, y: 150, width: 200, height: 200 });
+  });
+
+  it('resizes proportionally through the overlay and persists fractions on end', () => {
+    const onUpdateTable = vi.fn();
+    const node = { getClientRect: vi.fn(() => ({ x: 100, y: 100, width: 100, height: 100 })) };
+    state.mockStage.findOne.mockReturnValue(node);
+
+    renderCanvas({ selectedTableId: 't1', onUpdateTable });
+
+    state.overlay.onResizeStart?.('br');
+    state.overlay.onResizeMove?.('br', { x: 250, y: 250 });
     expect(onUpdateTable).not.toHaveBeenCalled();
 
-    await userEvent.click(screen.getByRole('button', { name: 'drag-end' }));
-    expect(onUpdateTable).toHaveBeenCalledTimes(1);
-    expect(onUpdateTable).toHaveBeenCalledWith('t1', { positionX: 0.5, positionY: 0.5 });
+    state.overlay.onResizeEnd?.('br', { x: 250, y: 250 });
 
-    await userEvent.click(screen.getByRole('button', { name: 'resize-end' }));
-    expect(onUpdateTable).toHaveBeenCalledTimes(2);
-    expect(onUpdateTable).toHaveBeenLastCalledWith('t1', { width: 0.25, height: 0.25 });
+    // World 150x150 at (100,100) → fractions over an 800x600 canvas.
+    expect(onUpdateTable).toHaveBeenCalledWith('t1', {
+      width: 150 / 800,
+      height: 150 / 600,
+      positionX: 100 / 800,
+      positionY: 100 / 600
+    });
+  });
+});
+
+describe('TableMapCanvas drag persistence', () => {
+  it('persists layout on drag-end', async () => {
+    const onUpdateTable = vi.fn();
+    renderCanvas({ onUpdateTable });
+
+    await userEvent.click(screen.getByRole('button', { name: 'drag-end' }));
+    expect(onUpdateTable).toHaveBeenCalledWith('t1', { positionX: 0.5, positionY: 0.5 });
   });
 
   it('skips tables that have no position/size', () => {
-    const onUpdateTable = vi.fn();
     const unplaced: Table = {
       ...table,
       id: 't2',
@@ -150,7 +278,9 @@ describe('TableMapCanvas drag/resize persistence', () => {
       <TableMapCanvas
         tables={[table, unplaced]}
         editing
-        onUpdateTable={onUpdateTable}
+        selectedTableId={null}
+        onSelectedTableIdChange={() => {}}
+        onUpdateTable={() => {}}
         onSelectTable={() => {}}
         onEditRequest={() => {}}
         onDeleteRequest={() => {}}
@@ -161,101 +291,43 @@ describe('TableMapCanvas drag/resize persistence', () => {
     expect(screen.queryByTestId('shape-t2')).not.toBeInTheDocument();
   });
 
-  it('forwards onEditRequest from a table body click', async () => {
-    const onEditRequest = vi.fn();
-    render(
-      <TableMapCanvas
-        tables={[table]}
-        editing
-        onUpdateTable={() => {}}
-        onSelectTable={() => {}}
-        onEditRequest={onEditRequest}
-        onDeleteRequest={() => {}}
-      />
-    );
-
-    await userEvent.click(screen.getByRole('button', { name: 'edit-t1' }));
-    expect(onEditRequest).toHaveBeenCalledWith(table);
-  });
-
   it('dragging one table updates only that table (other tables remain unchanged)', async () => {
     const onUpdateTable = vi.fn();
-    const tableB: Table = {
-      ...table,
-      id: 't2',
-      name: 'T2',
-      positionX: 0.6,
-      positionY: 0.6
-    };
+    const tableB: Table = { ...table, id: 't2', name: 'T2', positionX: 0.6, positionY: 0.6 };
 
-    render(
-      <TableMapCanvas
-        tables={[table, tableB]}
-        editing
-        onUpdateTable={onUpdateTable}
-        onSelectTable={() => {}}
-        onEditRequest={() => {}}
-        onDeleteRequest={() => {}}
-      />
-    );
+    renderCanvas({ tables: [table, tableB], onUpdateTable });
 
-    // Both tables render at their own independent positions.
-    const bInitialX = shapeProps['t2'].x; // 0.6 * 800 = 480
-    expect(shapeProps['t1'].x).not.toBe(shapeProps['t2'].x);
+    const bInitialX = state.shapeProps['t2'].x;
+    expect(state.shapeProps['t1'].x).not.toBe(state.shapeProps['t2'].x);
 
-    // Drag table A's body to (400, 300) → percent (0.5, 0.5).
     await userEvent.click(
       within(screen.getByTestId('shape-t1')).getByRole('button', { name: 'drag-end' })
     );
 
-    expect(onUpdateTable).toHaveBeenCalledTimes(1);
     expect(onUpdateTable).toHaveBeenCalledWith('t1', { positionX: 0.5, positionY: 0.5 });
-    // Table B must never receive a position update.
     expect(onUpdateTable.mock.calls.every(([id]) => id !== 't2')).toBe(true);
-    // Table B's rendered position is untouched.
-    expect(shapeProps['t2'].x).toBe(bInitialX);
+    expect(state.shapeProps['t2'].x).toBe(bInitialX);
   });
 });
 
 describe('TableMapCanvas zoom/pan', () => {
   it('enables stage pan from empty space and disables it over a table', () => {
-    render(
-      <TableMapCanvas
-        tables={[table]}
-        editing
-        onUpdateTable={() => {}}
-        onSelectTable={() => {}}
-        onEditRequest={() => {}}
-        onDeleteRequest={() => {}}
-      />
-    );
+    renderCanvas();
 
     const stage = { draggable: vi.fn(), getStage: () => stage };
 
-    // mousedown on empty canvas → stage becomes draggable (pan)
-    stageHandlers.onMouseDown?.({ target: stage });
+    state.stageHandlers.onMouseDown?.({ target: stage });
     expect(stage.draggable).toHaveBeenCalledWith(true);
 
-    // mousedown on a table → stage is NOT draggable (table drags instead)
-    stageHandlers.onMouseDown?.({ target: { getStage: () => stage } });
+    state.stageHandlers.onMouseDown?.({ target: { getStage: () => stage } });
     expect(stage.draggable).toHaveBeenCalledWith(false);
 
-    // mouseup always ends panning
-    stageHandlers.onMouseUp?.({ target: stage });
+    state.stageHandlers.onMouseUp?.({ target: stage });
     expect(stage.draggable).toHaveBeenCalledWith(false);
   });
 
   it('clamps zoom to MAX_ZOOM when a wheel event zooms in beyond the bound', () => {
-    render(
-      <TableMapCanvas
-        tables={[table]}
-        editing
-        onUpdateTable={() => {}}
-        onSelectTable={() => {}}
-        onEditRequest={() => {}}
-        onDeleteRequest={() => {}}
-      />
-    );
+    renderCanvas();
 
     const stage = {
       getPointerPosition: () => ({ x: 400, y: 300 }),
@@ -268,26 +340,16 @@ describe('TableMapCanvas zoom/pan', () => {
       height: vi.fn()
     };
 
-    stageHandlers.onWheel?.({
+    state.stageHandlers.onWheel?.({
       evt: { preventDefault: vi.fn(), deltaY: -100 },
       target: { getStage: () => stage }
     });
 
-    // 2.9 * ZOOM_STEP ≈ 3.19, clamped to MAX_ZOOM
     expect(stage.scale).toHaveBeenCalledWith({ x: MAX_ZOOM, y: MAX_ZOOM });
   });
 
   it('zooms without resizing the stage viewport (background stays fixed)', () => {
-    render(
-      <TableMapCanvas
-        tables={[table]}
-        editing
-        onUpdateTable={() => {}}
-        onSelectTable={() => {}}
-        onEditRequest={() => {}}
-        onDeleteRequest={() => {}}
-      />
-    );
+    renderCanvas();
 
     const stage = {
       getPointerPosition: () => ({ x: 400, y: 300 }),
@@ -300,12 +362,11 @@ describe('TableMapCanvas zoom/pan', () => {
       height: vi.fn()
     };
 
-    stageHandlers.onWheel?.({
+    state.stageHandlers.onWheel?.({
       evt: { preventDefault: vi.fn(), deltaY: -100 },
       target: { getStage: () => stage }
     });
 
-    // Zooming must change scale/position, but never the viewport dimensions.
     expect(stage.scale).toHaveBeenCalled();
     expect(stage.position).toHaveBeenCalled();
     expect(stage.width).not.toHaveBeenCalled();
@@ -313,17 +374,7 @@ describe('TableMapCanvas zoom/pan', () => {
   });
 
   it('renders the background as CSS on the container, not as a scaled Konva shape', () => {
-    render(
-      <TableMapCanvas
-        tables={[table]}
-        editing
-        onUpdateTable={() => {}}
-        onSelectTable={() => {}}
-        onEditRequest={() => {}}
-        onDeleteRequest={() => {}}
-      />
-    );
-
+    renderCanvas();
     expect(screen.getByTestId('table-map-canvas')).toHaveClass('bg-slate-50');
   });
 });

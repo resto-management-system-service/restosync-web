@@ -224,11 +224,13 @@ export const zCreateRestaurantDto = z.object({
 
 export const zCreateZoneDto = z.object({
     name: z.string(),
+    code: z.string(),
     sortOrder: z.number().optional()
 });
 
 export const zUpdateZoneDto = z.object({
     name: z.string().optional(),
+    code: z.string().optional(),
     sortOrder: z.number().optional()
 });
 
@@ -514,6 +516,10 @@ export const zReservationsControllerCancelPath = z.object({
 export const zRestaurantsControllerCreateBody = zCreateRestaurantDto;
 
 export const zZonesControllerCreateBody = zCreateZoneDto;
+
+export const zZonesControllerGetNextTableNamePath = z.object({
+    id: z.string()
+});
 
 export const zZonesControllerRemovePath = z.object({
     id: z.string()

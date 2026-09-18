@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   mountCount: 0,
   getTables: vi.fn(),
   getZones: vi.fn(),
+  getNextTableName: vi.fn(),
   updateTableLayout: vi.fn(),
   updateTable: vi.fn(),
   deleteTable: vi.fn(),
@@ -28,6 +29,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../api/service', () => ({
   getTables: mocks.getTables,
   getZones: mocks.getZones,
+  getNextTableName: mocks.getNextTableName,
   updateTableLayout: mocks.updateTableLayout,
   updateTable: mocks.updateTable,
   deleteTable: mocks.deleteTable,
@@ -57,11 +59,15 @@ vi.mock('./table-map-canvas', async () => {
   function MockCanvas({
     tables,
     editing,
+    selectedTableId,
+    onSelectedTableIdChange,
     onDeleteRequest,
     onEditRequest
   }: {
     tables: Array<{ id: string; name: string }>;
     editing: boolean;
+    selectedTableId: string | null;
+    onSelectedTableIdChange: (id: string | null) => void;
     onDeleteRequest: (table: { id: string; name: string }) => void;
     onEditRequest: (table: { id: string; name: string }) => void;
   }) {
@@ -74,6 +80,11 @@ vi.mock('./table-map-canvas', async () => {
           <div key={t.id}>
             <span>{t.name}</span>
             {editing && (
+              <button type='button' onClick={() => onSelectedTableIdChange(t.id)}>
+                {`select-${t.name}`}
+              </button>
+            )}
+            {editing && selectedTableId === t.id && (
               <>
                 <button type='button' onClick={() => onDeleteRequest(t)}>
                   {`eliminar-${t.name}`}
@@ -85,6 +96,9 @@ vi.mock('./table-map-canvas', async () => {
             )}
           </div>
         ))}
+        <button type='button' onClick={() => onSelectedTableIdChange(null)}>
+          deselect
+        </button>
       </div>
     );
   }
@@ -95,6 +109,7 @@ const zone = (id: string, name: string, sortOrder: number): Zone => ({
   id,
   restaurantId: 'r1',
   name,
+  code: id === 'z1' ? '1' : '2',
   sortOrder,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z'
@@ -137,6 +152,7 @@ beforeEach(() => {
   mocks.mountCount = 0;
   mocks.getTables.mockReset().mockImplementation(async () => tables);
   mocks.getZones.mockReset().mockImplementation(async () => zones);
+  mocks.getNextTableName.mockReset().mockImplementation(async () => '103');
   mocks.deleteTable.mockReset().mockImplementation(async (id: string) => {
     tables = tables.filter((t) => t.id !== id);
   });
@@ -162,11 +178,55 @@ it('renders only the active zone tables and switches zones', async () => {
   expect(screen.queryByText('T1')).not.toBeInTheDocument();
 });
 
+it('selects exactly one table at a time and deselects on empty canvas', async () => {
+  renderView();
+  await screen.findByText('T1');
+  await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+
+  await userEvent.click(screen.getByRole('button', { name: 'select-T1' }));
+  expect(screen.getByRole('button', { name: 'eliminar-T1' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'eliminar-T2' })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'select-T2' }));
+  expect(screen.getByRole('button', { name: 'eliminar-T2' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'eliminar-T1' })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'deselect' }));
+  expect(screen.queryByRole('button', { name: 'eliminar-T1' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'eliminar-T2' })).not.toBeInTheDocument();
+});
+
+it('deselects when switching zones', async () => {
+  renderView();
+  await screen.findByText('T1');
+  await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'select-T1' }));
+  expect(screen.getByRole('button', { name: 'eliminar-T1' })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('tab', { name: 'Piso 2' }));
+  await screen.findByText('T6');
+
+  expect(screen.queryByRole('button', { name: 'eliminar-T1' })).not.toBeInTheDocument();
+});
+
+it('deselects when toggling out of edit mode', async () => {
+  renderView();
+  await screen.findByText('T1');
+  await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'select-T1' }));
+  expect(screen.getByRole('button', { name: 'eliminar-T1' })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: /guardar mapa/i }));
+
+  expect(screen.queryByRole('button', { name: 'eliminar-T1' })).not.toBeInTheDocument();
+});
+
 it('does not remove a table until the delete is confirmed', async () => {
   renderView();
   await screen.findByText('T1');
 
   await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'select-T1' }));
   await userEvent.click(await screen.findByRole('button', { name: 'eliminar-T1' }));
 
   expect(await screen.findByText(/¿Eliminar mesa T1\?/)).toBeInTheDocument();
@@ -179,11 +239,12 @@ it('does not remove a table until the delete is confirmed', async () => {
   expect(mocks.deleteTable).toHaveBeenCalledWith('t1');
 });
 
-it('opens the edit sheet with the correct table on body click and closes on cancel', async () => {
+it('opens the edit sheet from the panel and closes on cancel', async () => {
   renderView();
   await screen.findByText('T1');
 
   await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'select-T1' }));
   await userEvent.click(await screen.findByRole('button', { name: 'editar-T1' }));
 
   expect(await screen.findByText('Editar mesa')).toBeInTheDocument();
@@ -199,6 +260,7 @@ it('submits an edit via updateTable and closes on success', async () => {
   await screen.findByText('T1');
 
   await userEvent.click(screen.getByRole('button', { name: /editar mapa/i }));
+  await userEvent.click(screen.getByRole('button', { name: 'select-T1' }));
   await userEvent.click(await screen.findByRole('button', { name: 'editar-T1' }));
 
   await screen.findByText('Editar mesa');
