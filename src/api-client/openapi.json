@@ -2578,6 +2578,38 @@
         ]
       }
     },
+    "/zones/{id}/next-table-name": {
+      "get": {
+        "operationId": "ZonesController_getNextTableName",
+        "summary": "Suggest the next available table name for a zone",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suggested table name, e.g. { \"suggestedName\": \"102\" }"
+          },
+          "404": {
+            "description": "Zone not found"
+          }
+        },
+        "tags": [
+          "zones"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/zones/{id}": {
       "patch": {
         "operationId": "ZonesController_update",
@@ -3403,13 +3435,19 @@
             "type": "string",
             "description": "Zone name, e.g. \"Piso 1\" or \"Terraza\""
           },
+          "code": {
+            "type": "string",
+            "description": "Short alphanumeric zone code used as a table-name prefix, e.g. \"1\", \"2\", \"T\", \"VIP\"",
+            "example": "1"
+          },
           "sortOrder": {
             "type": "number",
             "description": "Sort order for display"
           }
         },
         "required": [
-          "name"
+          "name",
+          "code"
         ]
       },
       "UpdateZoneDto": {
@@ -3418,6 +3456,11 @@
           "name": {
             "type": "string",
             "description": "Zone name, e.g. \"Piso 1\" or \"Terraza\""
+          },
+          "code": {
+            "type": "string",
+            "description": "Short alphanumeric zone code used as a table-name prefix, e.g. \"1\", \"2\", \"T\", \"VIP\"",
+            "example": "1"
           },
           "sortOrder": {
             "type": "number",
