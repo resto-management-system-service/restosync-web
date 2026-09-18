@@ -80,6 +80,8 @@ export default function TableShape({
     >
       {shape === 'circle' ? (
         <>
+          {/* The rim is the table's hit region: it MUST stay listening or clicks
+              and drags fall through to the Stage (which then pans the canvas). */}
           <Circle
             id={`table-rim-${table.id}`}
             x={width / 2}
@@ -88,7 +90,6 @@ export default function TableShape({
             fill={colors.fill}
             stroke={colors.stroke}
             strokeWidth={2}
-            listening={false}
           />
           <Circle
             x={width / 2}
@@ -110,7 +111,6 @@ export default function TableShape({
             fill={colors.fill}
             stroke={colors.stroke}
             strokeWidth={2}
-            listening={false}
           />
           <Rect
             x={TABLE_INSET}

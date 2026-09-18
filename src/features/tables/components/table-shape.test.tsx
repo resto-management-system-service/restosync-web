@@ -43,7 +43,9 @@ const textProps: Record<
 > = {};
 
 const shapeIds: string[] = [];
+const shapeListening: Record<string, boolean | undefined> = {};
 const chairPositions: Array<{ x: number; y: number }> = [];
+let chairGroupListening: boolean | undefined;
 
 vi.mock('react-konva', () => ({
   Group: ({
@@ -51,6 +53,7 @@ vi.mock('react-konva', () => ({
     name,
     x,
     y,
+    listening,
     onMouseDown,
     onClick,
     onTap,
@@ -62,6 +65,7 @@ vi.mock('react-konva', () => ({
     name?: string;
     x?: number;
     y?: number;
+    listening?: boolean;
     onMouseDown?: Handler;
     onClick?: Handler;
     onTap?: Handler;
@@ -74,15 +78,32 @@ vi.mock('react-konva', () => ({
     }
     if (name === 'table-chair') {
       chairPositions.push({ x: x ?? 0, y: y ?? 0 });
+      chairGroupListening = listening;
     }
     return <div data-testid={name}>{children}</div>;
   },
-  Circle: ({ id, radius }: { id?: string; radius?: number }) => {
-    if (id) shapeIds.push(id);
+  Circle: ({ id, radius, listening }: { id?: string; radius?: number; listening?: boolean }) => {
+    if (id) {
+      shapeIds.push(id);
+      shapeListening[id] = listening;
+    }
     return <div data-radius={radius} />;
   },
-  Rect: ({ id, width, height }: { id?: string; width?: number; height?: number }) => {
-    if (id) shapeIds.push(id);
+  Rect: ({
+    id,
+    width,
+    height,
+    listening
+  }: {
+    id?: string;
+    width?: number;
+    height?: number;
+    listening?: boolean;
+  }) => {
+    if (id) {
+      shapeIds.push(id);
+      shapeListening[id] = listening;
+    }
     return <div data-width={width} data-height={height} />;
   },
   Text: ({
@@ -143,8 +164,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   Object.keys(groupHandlers).forEach((key) => delete groupHandlers[key]);
   Object.keys(textProps).forEach((key) => delete textProps[key]);
+  Object.keys(shapeListening).forEach((key) => delete shapeListening[key]);
   shapeIds.length = 0;
   chairPositions.length = 0;
+  chairGroupListening = undefined;
 });
 
 it('gives the body group an id so the canvas can find it', () => {
@@ -155,6 +178,24 @@ it('gives the body group an id so the canvas can find it', () => {
 it('gives the rim shape its own id (used for transform-aware selection/resize)', () => {
   renderShape();
   expect(shapeIds).toContain('table-rim-t1');
+});
+
+it('keeps the table body hit-testable (rim shape must be listening)', () => {
+  renderShape();
+  // Konva Groups have no hit region of their own — they rely on a listening
+  // descendant shape. If the rim becomes `listening={false}`, clicks/drags fall
+  // through to the Stage and pan the canvas instead of selecting/moving the table.
+  expect(shapeListening['table-rim-t1']).not.toBe(false);
+});
+
+it('keeps the square rim listening too', () => {
+  renderShape({ table: { ...table, shape: 'square' } });
+  expect(shapeListening['table-rim-t1']).not.toBe(false);
+});
+
+it('keeps chairs non-interactive (their group stays listening=false)', () => {
+  renderShape({ table: { ...table, capacity: 4 } });
+  expect(chairGroupListening).toBe(false);
 });
 
 it('calls onSelect when clicking the body in edit mode (selection, not edit sheet)', () => {
