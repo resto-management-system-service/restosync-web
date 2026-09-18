@@ -16,10 +16,10 @@ vi.mock('../api/service', () => ({
   createZone: vi.fn()
 }));
 
-const zone = (id: string, code: string): Zone => ({
+const zone = (id: string, name: string, code: string): Zone => ({
   id,
   restaurantId: 'r1',
-  name: id,
+  name,
   code,
   sortOrder: 0,
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -30,41 +30,55 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-it('pre-fills the next code suggestion read-only (reusing gaps) and keeps name editable', async () => {
+it('previews the per-category final name and submits the combined name + auto code', async () => {
   const onCreated = vi.fn();
-  vi.mocked(createZone).mockResolvedValue(zone('z-new', '2'));
+  vi.mocked(createZone).mockResolvedValue(zone('z-new', 'Piso 3', '3'));
 
   renderWithProviders(
-    <AddZoneInput zones={[zone('z1', '1'), zone('z2', '3')]} onCreated={onCreated} />
+    <AddZoneInput
+      zones={[zone('z1', 'Piso 1', '1'), zone('z2', 'Piso 2', '2')]}
+      onCreated={onCreated}
+    />
   );
 
   await userEvent.click(screen.getByRole('button', { name: /agregar zona/i }));
+  await userEvent.type(screen.getByLabelText(/nombre de la zona/i), 'Piso');
 
-  // Code is shown read-only — no editable input for it.
-  expect(screen.getByTestId('zone-code-readonly')).toHaveTextContent('2');
-  expect(screen.queryByLabelText(/código de la zona/i)).not.toBeInTheDocument();
+  expect(screen.getByTestId('zone-name-preview')).toHaveTextContent('Piso 3');
 
-  await userEvent.type(screen.getByLabelText(/nombre de la zona/i), 'Terraza');
   await userEvent.click(screen.getByRole('button', { name: /guardar zona/i }));
 
-  await waitFor(() => expect(createZone).toHaveBeenCalledWith({ name: 'Terraza', code: '2' }));
+  await waitFor(() => expect(createZone).toHaveBeenCalledWith({ name: 'Piso 3', code: '3' }));
 });
 
-it('suggests "1" for a restaurant with no numeric zone codes', async () => {
-  renderWithProviders(<AddZoneInput zones={[zone('z1', 'VIP')]} />);
+it('starts numbering at 1 for a never-used category name', async () => {
+  vi.mocked(createZone).mockResolvedValue(zone('z-new', 'Terraza 1', '2'));
+
+  renderWithProviders(<AddZoneInput zones={[zone('z1', 'Piso 1', '1')]} />);
+
+  await userEvent.click(screen.getByRole('button', { name: /agregar zona/i }));
+  await userEvent.type(screen.getByLabelText(/nombre de la zona/i), 'Terraza');
+
+  expect(screen.getByTestId('zone-name-preview')).toHaveTextContent('Terraza 1');
+});
+
+it('does not show the internal code to the user', async () => {
+  renderWithProviders(<AddZoneInput zones={[zone('z1', 'Piso 1', '1')]} />);
 
   await userEvent.click(screen.getByRole('button', { name: /agregar zona/i }));
 
-  expect(screen.getByTestId('zone-code-readonly')).toHaveTextContent('1');
+  expect(screen.queryByTestId('zone-code-readonly')).not.toBeInTheDocument();
 });
 
 it('surfaces the backend duplicate-code message via toast', async () => {
   vi.mocked(createZone).mockRejectedValue(new Error('Zone code "2" already exists'));
 
-  renderWithProviders(<AddZoneInput zones={[zone('z1', '1'), zone('z2', '3')]} />);
+  renderWithProviders(
+    <AddZoneInput zones={[zone('z1', 'Piso 1', '1'), zone('z2', 'Piso 3', '3')]} />
+  );
 
   await userEvent.click(screen.getByRole('button', { name: /agregar zona/i }));
-  await userEvent.type(screen.getByLabelText(/nombre de la zona/i), 'Piso 2');
+  await userEvent.type(screen.getByLabelText(/nombre de la zona/i), 'Piso');
   await userEvent.click(screen.getByRole('button', { name: /guardar zona/i }));
 
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Zone code "2" already exists'));

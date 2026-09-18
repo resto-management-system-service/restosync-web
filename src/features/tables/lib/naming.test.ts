@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { suggestNextZoneCode } from './naming';
+import { computeNextZoneName, suggestNextZoneCode } from './naming';
 
 describe('suggestNextZoneCode', () => {
   it('suggests "1" when no zones exist', () => {
@@ -21,5 +21,37 @@ describe('suggestNextZoneCode', () => {
 
   it('ignores null/undefined codes', () => {
     expect(suggestNextZoneCode([{ code: null }, { code: undefined }])).toBe('1');
+  });
+});
+
+describe('computeNextZoneName', () => {
+  it('starts at 1 for a never-used text', () => {
+    expect(computeNextZoneName(['Piso 1', 'Piso 2'], 'Terraza')).toBe('Terraza 1');
+  });
+
+  it('takes the max number + 1 for the matching category', () => {
+    expect(computeNextZoneName(['Piso 1', 'Piso 2'], 'Piso')).toBe('Piso 3');
+  });
+
+  it('matches the text part case-insensitively', () => {
+    expect(computeNextZoneName(['piso 1', 'PISO 2'], 'Piso')).toBe('Piso 3');
+  });
+
+  it('counts per-category independently', () => {
+    expect(computeNextZoneName(['Piso 1', 'Piso 2', 'Terraza 1'], 'Terraza')).toBe('Terraza 2');
+  });
+
+  it('handles names that do not parse as "{text} {number}" as their own category', () => {
+    expect(computeNextZoneName(['VIP', 'Piso 1'], 'VIP')).toBe('VIP 1');
+    expect(computeNextZoneName(['Terraza Sur'], 'Terraza')).toBe('Terraza 1');
+  });
+
+  it('returns an empty string for blank input', () => {
+    expect(computeNextZoneName(['Piso 1'], '')).toBe('');
+    expect(computeNextZoneName(['Piso 1'], '   ')).toBe('');
+  });
+
+  it('preserves the typed casing and surrounding whitespace-trimmed text', () => {
+    expect(computeNextZoneName(['Piso 1'], '  piso  ')).toBe('piso 2');
   });
 });

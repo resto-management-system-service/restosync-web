@@ -18,13 +18,18 @@ import {
 } from '../api/tables.queries';
 import type { Table, Zone } from '../api/types';
 import { DEFAULT_CANVAS_HEIGHT, clampCanvasHeight } from '../lib/canvas-view';
+import { computeDefaultPlacement } from '../lib/layout';
 import type { TableMapCanvasHandle } from './table-map-canvas';
 import AddTableSheet from './add-table-sheet';
 import CanvasResizeHandle from './canvas-resize-handle';
 import DeleteTableDialog from './delete-table-dialog';
 import DeleteZoneDialog from './delete-zone-dialog';
 import StatusLegend from './status-legend';
+import UnassignedTablesView from './unassigned-tables-view';
 import ZoneTabs from './zone-tabs';
+
+/** Sentinel active-zone id representing the client-side "unassigned" view. */
+const UNASSIGNED_VIEW_ID = '__unassigned__';
 
 const TableMapCanvas = dynamic(() => import('./table-map-canvas'), {
   ssr: false,
@@ -49,18 +54,29 @@ export default function FloorPlanView() {
   const zones = zonesQuery.data ?? [];
   const tables = tablesQuery.data ?? [];
 
-  const activeZone = zones.find((z) => z.id === activeZoneId) ?? zones[0] ?? null;
+  const unassignedTables = tables.filter((t) => t.zoneId === null);
+  const isUnassignedView = activeZoneId === UNASSIGNED_VIEW_ID;
+
+  const activeZone = isUnassignedView
+    ? null
+    : (zones.find((z) => z.id === activeZoneId) ?? zones[0] ?? null);
   const effectiveZoneId = activeZone?.id ?? '';
   const zoneTables = tables.filter((t) => t.zoneId === effectiveZoneId);
 
   const updateMutation = useMutation(updateTableLayoutMutation);
+
+  const reassignMutation = useMutation({
+    ...updateTableLayoutMutation,
+    onError: (error) => toast.error(error.message)
+  });
 
   const deleteMutation = useMutation({
     ...deleteTableMutation,
     onSuccess: () => {
       setPendingDelete(null);
       toast.success('Mesa eliminada');
-    }
+    },
+    onError: (error) => toast.error(error.message)
   });
 
   const deleteZone = useMutation({
@@ -80,6 +96,30 @@ export default function FloorPlanView() {
   const handleZoneChange = (zoneId: string) => {
     setActiveZoneId(zoneId);
     setSelectedTableId(null);
+  };
+
+  const handleSelectUnassigned = () => {
+    handleZoneChange(UNASSIGNED_VIEW_ID);
+  };
+
+  const handleReassign = (table: Table, targetZoneId: string) => {
+    const placedInZone = tables
+      .filter(
+        (t) =>
+          t.zoneId === targetZoneId &&
+          t.positionX !== null &&
+          t.positionY !== null &&
+          t.width !== null &&
+          t.height !== null
+      )
+      .map((t) => ({
+        positionX: t.positionX as number,
+        positionY: t.positionY as number,
+        width: t.width as number,
+        height: t.height as number
+      }));
+    const placement = computeDefaultPlacement(placedInZone);
+    reassignMutation.mutate({ id: table.id, layout: { zoneId: targetZoneId, ...placement } });
   };
 
   const isLoading = zonesQuery.isPending || tablesQuery.isPending;
@@ -114,78 +154,92 @@ export default function FloorPlanView() {
             zones={zones}
             activeZoneId={effectiveZoneId}
             editing={editing}
+            unassignedCount={unassignedTables.length}
+            isUnassignedActive={isUnassignedView}
             onZoneChange={handleZoneChange}
+            onSelectUnassigned={handleSelectUnassigned}
             onZoneCreated={handleZoneChange}
             onDeleteZone={setPendingDeleteZone}
           />
         )}
-        <div className='flex items-center gap-2'>
-          <Button
-            type='button'
-            variant='outline'
-            onClick={() => canvasRef.current?.fitToView()}
-            disabled={isLoading || isError}
-          >
-            <Icons.zoomScan className='mr-2 h-4 w-4' />
-            Centrar mapa
-          </Button>
-          <Button
-            type='button'
-            variant={editing ? 'default' : 'outline'}
-            onClick={() => {
-              setEditing((prev) => {
-                if (prev) setSelectedTableId(null);
-                return !prev;
-              });
-            }}
-          >
-            <Icons.edit className='mr-2 h-4 w-4' />
-            {editing ? 'Guardar mapa' : 'Editar mapa'}
-          </Button>
-        </div>
+        {!isUnassignedView && (
+          <div className='flex items-center gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => canvasRef.current?.fitToView()}
+              disabled={isLoading || isError}
+            >
+              <Icons.zoomScan className='mr-2 h-4 w-4' />
+              Centrar mapa
+            </Button>
+            <Button
+              type='button'
+              variant={editing ? 'default' : 'outline'}
+              onClick={() => {
+                setEditing((prev) => {
+                  if (prev) setSelectedTableId(null);
+                  return !prev;
+                });
+              }}
+            >
+              <Icons.edit className='mr-2 h-4 w-4' />
+              {editing ? 'Guardar mapa' : 'Editar mapa'}
+            </Button>
+          </div>
+        )}
       </div>
 
       <StatusLegend />
 
-      <div className='rounded-lg border'>
-        <div className='relative' data-testid='canvas-container' style={{ height: canvasHeight }}>
-          {isError ? (
-            <Alert variant='destructive' className='m-4'>
-              <Icons.alertCircle className='h-4 w-4' />
-              <AlertTitle>No se pudo cargar el mapa</AlertTitle>
-              <AlertDescription>
-                Ocurrió un error al obtener las zonas y mesas. Intenta de nuevo.
-              </AlertDescription>
-            </Alert>
-          ) : isLoading ? (
-            <Skeleton className='h-full w-full rounded-none' />
-          ) : (
-            <TableMapCanvas
-              ref={canvasRef}
-              key={effectiveZoneId}
-              tables={zoneTables}
-              editing={editing}
-              selectedTableId={selectedTableId}
-              onSelectedTableIdChange={setSelectedTableId}
-              onUpdateTable={handleUpdateTable}
-              onSelectTable={(table) => toast.info(`Abrir orden de la mesa ${table.name}`)}
-              onEditRequest={setPendingEdit}
-              onDeleteRequest={setPendingDelete}
-            />
-          )}
-          {editing && !isError && !isLoading && (
-            <Button
-              type='button'
-              className='absolute right-4 bottom-4 shadow-lg'
-              onClick={() => setAddOpen(true)}
-            >
-              <Icons.add className='mr-2 h-4 w-4' />
-              Agregar mesa
-            </Button>
-          )}
+      {isUnassignedView ? (
+        <UnassignedTablesView
+          tables={unassignedTables}
+          zones={zones}
+          onReassign={handleReassign}
+          onDelete={setPendingDelete}
+        />
+      ) : (
+        <div className='rounded-lg border'>
+          <div className='relative' data-testid='canvas-container' style={{ height: canvasHeight }}>
+            {isError ? (
+              <Alert variant='destructive' className='m-4'>
+                <Icons.alertCircle className='h-4 w-4' />
+                <AlertTitle>No se pudo cargar el mapa</AlertTitle>
+                <AlertDescription>
+                  Ocurrió un error al obtener las zonas y mesas. Intenta de nuevo.
+                </AlertDescription>
+              </Alert>
+            ) : isLoading ? (
+              <Skeleton className='h-full w-full rounded-none' />
+            ) : (
+              <TableMapCanvas
+                ref={canvasRef}
+                key={effectiveZoneId}
+                tables={zoneTables}
+                editing={editing}
+                selectedTableId={selectedTableId}
+                onSelectedTableIdChange={setSelectedTableId}
+                onUpdateTable={handleUpdateTable}
+                onSelectTable={(table) => toast.info(`Abrir orden de la mesa ${table.name}`)}
+                onEditRequest={setPendingEdit}
+                onDeleteRequest={setPendingDelete}
+              />
+            )}
+            {editing && !isError && !isLoading && (
+              <Button
+                type='button'
+                className='absolute right-4 bottom-4 shadow-lg'
+                onClick={() => setAddOpen(true)}
+              >
+                <Icons.add className='mr-2 h-4 w-4' />
+                Agregar mesa
+              </Button>
+            )}
+          </div>
+          <CanvasResizeHandle onDragStart={handleResizeStart} onDragMove={handleResizeMove} />
         </div>
-        <CanvasResizeHandle onDragStart={handleResizeStart} onDragMove={handleResizeMove} />
-      </div>
+      )}
 
       <AddTableSheet
         key={pendingEdit ? `edit-${pendingEdit.id}` : 'create'}

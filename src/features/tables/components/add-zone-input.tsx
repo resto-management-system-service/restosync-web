@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
 import { createZoneMutation } from '../api/tables.queries';
-import { suggestNextZoneCode } from '../lib/naming';
+import { computeNextZoneName, suggestNextZoneCode } from '../lib/naming';
 import type { Zone } from '../api/types';
 
 interface AddZoneInputProps {
@@ -56,11 +56,16 @@ export default function AddZoneInput({ zones, onCreated }: AddZoneInputProps) {
     );
   }
 
+  const fullName = computeNextZoneName(
+    zones.map((z) => z.name),
+    name
+  );
+
   const submit = () => {
     const trimmedName = name.trim();
     const trimmedCode = code.trim();
     if (!trimmedName || !trimmedCode) return;
-    mutation.mutate({ name: trimmedName, code: trimmedCode });
+    mutation.mutate({ name: fullName, code: trimmedCode });
   };
 
   const cancel = () => {
@@ -84,12 +89,6 @@ export default function AddZoneInput({ zones, onCreated }: AddZoneInputProps) {
           aria-label='Nombre de la zona'
           className='h-9 w-40'
         />
-        <div
-          data-testid='zone-code-readonly'
-          className='flex h-9 w-20 items-center justify-center rounded-md border border-input bg-muted px-2 text-sm font-medium text-muted-foreground'
-        >
-          {code}
-        </div>
         <Button
           type='button'
           size='icon'
@@ -101,9 +100,15 @@ export default function AddZoneInput({ zones, onCreated }: AddZoneInputProps) {
           <Icons.check className='h-4 w-4' />
         </Button>
       </div>
-      <p className='text-xs text-muted-foreground'>
-        El código se asigna automático — no se puede editar.
-      </p>
+      {name.trim() ? (
+        <p data-testid='zone-name-preview' className='text-xs text-muted-foreground'>
+          Se llamará: <span className='font-medium text-foreground'>{fullName}</span>
+        </p>
+      ) : (
+        <p className='text-xs text-muted-foreground'>
+          Se completará con un número automático según las zonas existentes.
+        </p>
+      )}
     </div>
   );
 }

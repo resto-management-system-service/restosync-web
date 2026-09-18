@@ -88,19 +88,41 @@ describe('chairOffsets', () => {
     });
   });
 
-  it('places square/rounded chairs one per side, capped at 4', () => {
-    expect(chairOffsets('square', 8, 100, 100)).toHaveLength(4);
-    expect(chairOffsets('square', 3, 100, 100)).toHaveLength(3);
-    expect(chairOffsets('rounded', 2, 100, 100)).toHaveLength(2);
-    expect(chairOffsets('rounded', 4, 100, 100)).toHaveLength(4);
+  it('matches square capacity exactly (not capped at 4)', () => {
+    for (let capacity = 1; capacity <= 8; capacity++) {
+      expect(chairOffsets('square', capacity, 100, 100)).toHaveLength(capacity);
+    }
   });
 
-  it('centers square chairs on each side (top, right, bottom, left)', () => {
-    const [top, right, bottom, left] = chairOffsets('square', 4, 100, 100);
+  it('matches rounded capacity exactly', () => {
+    expect(chairOffsets('rounded', 6, 100, 100)).toHaveLength(6);
+    expect(chairOffsets('rounded', 8, 100, 100)).toHaveLength(8);
+  });
+
+  it('places one chair centered per side for capacity 4', () => {
+    const [top, bottom, right, left] = chairOffsets('square', 4, 100, 100);
     expect(top).toEqual({ x: 50, y: -10 });
-    expect(right).toEqual({ x: 110, y: 50 });
     expect(bottom).toEqual({ x: 50, y: 110 });
+    expect(right).toEqual({ x: 110, y: 50 });
     expect(left).toEqual({ x: -10, y: 50 });
+  });
+
+  it('distributes extra chairs along opposite sides first (capacity 6)', () => {
+    const positions = chairOffsets('square', 6, 100, 100);
+    expect(positions).toHaveLength(6);
+
+    expect(positions.filter((p) => p.y === -10)).toHaveLength(2); // top
+    expect(positions.filter((p) => p.y === 110)).toHaveLength(2); // bottom
+    expect(positions.filter((p) => p.x === 110)).toHaveLength(1); // right
+    expect(positions.filter((p) => p.x === -10)).toHaveLength(1); // left
+  });
+
+  it('spreads 8 chairs two per side', () => {
+    const positions = chairOffsets('square', 8, 100, 100);
+    expect(positions.filter((p) => p.y === -10)).toHaveLength(2); // top
+    expect(positions.filter((p) => p.y === 110)).toHaveLength(2); // bottom
+    expect(positions.filter((p) => p.x === 110)).toHaveLength(2); // right
+    expect(positions.filter((p) => p.x === -10)).toHaveLength(2); // left
   });
 });
 

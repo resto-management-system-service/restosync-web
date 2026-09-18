@@ -115,7 +115,7 @@ const zone = (id: string, name: string, sortOrder: number): Zone => ({
   updatedAt: '2026-01-01T00:00:00.000Z'
 });
 
-const table = (id: string, name: string, zoneId: string): Table => ({
+const table = (id: string, name: string, zoneId: string | null): Table => ({
   id,
   name,
   capacity: 4,
@@ -333,7 +333,6 @@ it('renames a zone via the dropdown (pre-filled, calls updateZone)', async () =>
 
   const input = await screen.findByLabelText(/nuevo nombre/i);
   expect(input).toHaveValue('Piso 1');
-  expect(screen.getByTestId('zone-code-readonly')).toHaveTextContent('1');
 
   await userEvent.clear(input);
   await userEvent.type(input, 'Planta Baja');
@@ -388,4 +387,61 @@ it('switches to the first remaining zone after deleting the active zone', async 
 
   await waitFor(() => expect(mocks.deleteZone).toHaveBeenCalledWith('z1'));
   await waitFor(() => expect(screen.getByText('T6')).toBeInTheDocument());
+});
+
+it('hides the unassigned tab when no tables are unassigned', async () => {
+  renderView();
+  await screen.findByText('T1');
+
+  expect(screen.queryByRole('tab', { name: /sin asignar/i })).not.toBeInTheDocument();
+});
+
+it('shows the unassigned tab and lists unassigned tables when selected', async () => {
+  tables = [table('t1', 'T1', 'z1'), table('t9', 'T9', null)];
+  renderView();
+  await screen.findByText('T1');
+
+  await userEvent.click(screen.getByRole('tab', { name: /sin asignar/i }));
+
+  expect(await screen.findByText('T9')).toBeInTheDocument();
+  expect(screen.queryByTestId('canvas')).not.toBeInTheDocument();
+});
+
+it('reassigns an unassigned table to a target zone', async () => {
+  tables = [table('t1', 'T1', 'z1'), table('t9', 'T9', null)];
+  renderView();
+  await screen.findByText('T1');
+
+  await userEvent.click(screen.getByRole('tab', { name: /sin asignar/i }));
+  await screen.findByText('T9');
+
+  await userEvent.click(screen.getByRole('combobox', { name: /reasignar t9/i }));
+  await userEvent.click(await screen.findByRole('option', { name: 'Piso 1' }));
+
+  await waitFor(() =>
+    expect(mocks.updateTableLayout).toHaveBeenCalledWith(
+      't9',
+      expect.objectContaining({
+        zoneId: 'z1',
+        positionX: expect.any(Number),
+        positionY: expect.any(Number)
+      })
+    )
+  );
+});
+
+it('deletes a table from the unassigned view via confirmation', async () => {
+  tables = [table('t1', 'T1', 'z1'), table('t9', 'T9', null)];
+  renderView();
+  await screen.findByText('T1');
+
+  await userEvent.click(screen.getByRole('tab', { name: /sin asignar/i }));
+  await screen.findByText('T9');
+
+  await userEvent.click(screen.getByRole('button', { name: /eliminar t9/i }));
+
+  expect(await screen.findByText(/¿Eliminar mesa T9\?/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /^eliminar$/i }));
+
+  await waitFor(() => expect(mocks.deleteTable).toHaveBeenCalledWith('t9'));
 });

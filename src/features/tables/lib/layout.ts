@@ -137,9 +137,11 @@ interface Point {
  * Compute chair center offsets (relative to the table's top-left corner).
  *
  * - `circle`: chairs evenly distributed in a ring around the table.
- * - `square` / `rounded`: up to 4 chairs, one centered on each side (top,
- *   right, bottom, left) — NOT distributed around the full perimeter. If
- *   capacity exceeds 4, the rendered chairs are capped at 4.
+ * - `square` / `rounded`: chairs distributed across the four sides so the
+ *   count always matches capacity. The base count per side is
+ *   `floor(capacity / 4)` and the remainder is placed on opposite sides first
+ *   (top, then bottom, then right), so e.g. capacity 6 → 2 top / 2 bottom /
+ *   1 right / 1 left. Chairs on a side are evenly spaced along that side.
  */
 export function chairOffsets(
   shape: TableShape,
@@ -147,11 +149,11 @@ export function chairOffsets(
   width: number,
   height: number
 ): Point[] {
-  const cx = width / 2;
-  const cy = height / 2;
   const positions: Point[] = [];
 
   if (shape === 'circle') {
+    const cx = width / 2;
+    const cy = height / 2;
     const radius = Math.min(width, height) / 2;
     for (let i = 0; i < capacity; i++) {
       const angle = (Math.PI * 2 * i) / capacity;
@@ -163,15 +165,28 @@ export function chairOffsets(
     return positions;
   }
 
-  // square & rounded: one chair per side, capped at 4.
-  const sides: Point[] = [
-    { x: cx, y: -CHAIR_GAP }, // top
-    { x: width + CHAIR_GAP, y: cy }, // right
-    { x: cx, y: height + CHAIR_GAP }, // bottom
-    { x: -CHAIR_GAP, y: cy } // left
-  ];
-  for (let i = 0; i < Math.min(capacity, 4); i++) {
-    positions.push(sides[i]);
-  }
+  // square & rounded: distribute `capacity` chairs across the four sides.
+  const base = Math.floor(capacity / 4);
+  const remainder = capacity % 4;
+  const counts = {
+    top: base + (remainder >= 1 ? 1 : 0),
+    bottom: base + (remainder >= 2 ? 1 : 0),
+    right: base + (remainder >= 3 ? 1 : 0),
+    left: base
+  };
+
+  const along = (count: number, length: number): number[] => {
+    const result: number[] = [];
+    for (let i = 0; i < count; i++) {
+      result.push((length * (i + 1)) / (count + 1));
+    }
+    return result;
+  };
+
+  for (const x of along(counts.top, width)) positions.push({ x, y: -CHAIR_GAP });
+  for (const x of along(counts.bottom, width)) positions.push({ x, y: height + CHAIR_GAP });
+  for (const y of along(counts.right, height)) positions.push({ x: width + CHAIR_GAP, y });
+  for (const y of along(counts.left, height)) positions.push({ x: -CHAIR_GAP, y });
+
   return positions;
 }
