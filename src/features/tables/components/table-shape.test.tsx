@@ -42,10 +42,15 @@ const textProps: Record<
   }
 > = {};
 
+const shapeIds: string[] = [];
+const chairPositions: Array<{ x: number; y: number }> = [];
+
 vi.mock('react-konva', () => ({
   Group: ({
     id,
     name,
+    x,
+    y,
     onMouseDown,
     onClick,
     onTap,
@@ -55,6 +60,8 @@ vi.mock('react-konva', () => ({
   }: {
     id?: string;
     name?: string;
+    x?: number;
+    y?: number;
     onMouseDown?: Handler;
     onClick?: Handler;
     onTap?: Handler;
@@ -62,11 +69,22 @@ vi.mock('react-konva', () => ({
     onDragEnd?: (e: DragEvent) => void;
     children?: React.ReactNode;
   }) => {
-    if (name) groupHandlers[name] = { id, onMouseDown, onClick, onTap, onDragMove, onDragEnd };
+    if (name === 'table-body') {
+      groupHandlers[name] = { id, onMouseDown, onClick, onTap, onDragMove, onDragEnd };
+    }
+    if (name === 'table-chair') {
+      chairPositions.push({ x: x ?? 0, y: y ?? 0 });
+    }
     return <div data-testid={name}>{children}</div>;
   },
-  Circle: () => <div />,
-  Rect: () => <div />,
+  Circle: ({ id, radius }: { id?: string; radius?: number }) => {
+    if (id) shapeIds.push(id);
+    return <div data-radius={radius} />;
+  },
+  Rect: ({ id, width, height }: { id?: string; width?: number; height?: number }) => {
+    if (id) shapeIds.push(id);
+    return <div data-width={width} data-height={height} />;
+  },
   Text: ({
     text,
     fontSize,
@@ -125,12 +143,18 @@ beforeEach(() => {
   vi.clearAllMocks();
   Object.keys(groupHandlers).forEach((key) => delete groupHandlers[key]);
   Object.keys(textProps).forEach((key) => delete textProps[key]);
+  shapeIds.length = 0;
+  chairPositions.length = 0;
 });
 
-it('gives the body group an id so the canvas can find it for the selection overlay', () => {
+it('gives the body group an id so the canvas can find it', () => {
   renderShape();
-
   expect(groupHandlers['table-body'].id).toBe('table-t1');
+});
+
+it('gives the rim shape its own id (used for transform-aware selection/resize)', () => {
+  renderShape();
+  expect(shapeIds).toContain('table-rim-t1');
 });
 
 it('calls onSelect when clicking the body in edit mode (selection, not edit sheet)', () => {
@@ -185,6 +209,16 @@ it('fires onDragMove on body drag so the selection overlay can re-sync', () => {
   expect(onDragMove).toHaveBeenCalledWith('t1');
 });
 
+it('renders one chair per capacity for a circle table', () => {
+  renderShape({ table: { ...table, shape: 'circle', capacity: 6 } });
+  expect(chairPositions).toHaveLength(6);
+});
+
+it('caps square chairs at 4 (one per side)', () => {
+  renderShape({ table: { ...table, shape: 'square', capacity: 8 } });
+  expect(chairPositions).toHaveLength(4);
+});
+
 it('keeps the label centered and scales its font with the shape size', () => {
   renderShape({ width: 200, height: 200 });
 
@@ -197,9 +231,11 @@ it('keeps the label centered and scales its font with the shape size', () => {
   expect(label.fontSize).toBe(computeLabelFontSize(200, 200));
 });
 
-it('updates the label geometry when the shape is resized (no desync)', () => {
+it('updates label geometry and chair positions together on resize (no desync)', () => {
   const { rerender } = renderShape({ width: 100, height: 100 });
   expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(100, 100));
+  expect(chairPositions).toHaveLength(4);
+  const firstChair = chairPositions[0];
 
   rerender(
     <TableShape
@@ -217,4 +253,7 @@ it('updates the label geometry when the shape is resized (no desync)', () => {
   expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(300, 300));
   expect(textProps['T1'].width).toBe(300);
   expect(textProps['T1'].height).toBe(300);
+  // The circle chair ring re-derives from the new size (4 more chairs pushed).
+  expect(chairPositions).toHaveLength(8);
+  expect(chairPositions[4]).not.toEqual(firstChair);
 });

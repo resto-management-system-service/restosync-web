@@ -5,8 +5,10 @@ import { Circle, Group, Rect, Text } from 'react-konva';
 import type { Table } from '../api/types';
 import {
   CHAIR_COLOR,
+  CHAIR_DOT_RADIUS,
   CHAIR_RADIUS,
   STATUS_COLORS,
+  TABLE_INSET,
   chairOffsets,
   computeLabelFontSize
 } from '../lib/layout';
@@ -77,38 +79,63 @@ export default function TableShape({
       }}
     >
       {shape === 'circle' ? (
-        <Circle
-          x={width / 2}
-          y={height / 2}
-          radius={Math.min(width, height) / 2}
-          fill={colors.fill}
-          stroke={colors.stroke}
-          strokeWidth={2}
-          listening={false}
-        />
+        <>
+          <Circle
+            id={`table-rim-${table.id}`}
+            x={width / 2}
+            y={height / 2}
+            radius={Math.min(width, height) / 2}
+            fill={colors.fill}
+            stroke={colors.stroke}
+            strokeWidth={2}
+            listening={false}
+          />
+          <Circle
+            x={width / 2}
+            y={height / 2}
+            radius={Math.min(width, height) / 2 - TABLE_INSET}
+            fill={colors.tabletop}
+            stroke={colors.stroke}
+            strokeWidth={1.5}
+            listening={false}
+          />
+        </>
       ) : (
-        <Rect
-          width={width}
-          height={height}
-          cornerRadius={shape === 'rounded' ? 8 : 0}
-          fill={colors.fill}
-          stroke={colors.stroke}
-          strokeWidth={2}
-          listening={false}
-        />
+        <>
+          <Rect
+            id={`table-rim-${table.id}`}
+            width={width}
+            height={height}
+            cornerRadius={shape === 'rounded' ? 8 : 0}
+            fill={colors.fill}
+            stroke={colors.stroke}
+            strokeWidth={2}
+            listening={false}
+          />
+          <Rect
+            x={TABLE_INSET}
+            y={TABLE_INSET}
+            width={width - TABLE_INSET * 2}
+            height={height - TABLE_INSET * 2}
+            cornerRadius={shape === 'rounded' ? 4 : 2}
+            fill={colors.tabletop}
+            stroke={colors.stroke}
+            strokeWidth={1.5}
+            listening={false}
+          />
+        </>
       )}
 
       {chairs.map((chair, index) => (
-        <Circle
-          key={index}
-          x={chair.x}
-          y={chair.y}
-          radius={CHAIR_RADIUS}
-          fill={CHAIR_COLOR.fill}
-          stroke={CHAIR_COLOR.stroke}
-          strokeWidth={1.5}
-          listening={false}
-        />
+        <Group key={index} name='table-chair' x={chair.x} y={chair.y} listening={false}>
+          <Circle
+            radius={CHAIR_RADIUS}
+            fill={CHAIR_COLOR.fill}
+            stroke={CHAIR_COLOR.stroke}
+            strokeWidth={1.5}
+          />
+          <Circle radius={CHAIR_DOT_RADIUS} fill={CHAIR_COLOR.dot} />
+        </Group>
       ))}
 
       <Text

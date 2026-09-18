@@ -5,6 +5,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Sheet,
   SheetContent,
@@ -13,7 +14,6 @@ import {
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet';
-import * as z from 'zod';
 import type { Table } from '../api/types';
 import {
   createTableMutation,
@@ -108,9 +108,12 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
     }
   }, [open, isEdit, nextNameQuery.data, form]);
 
-  const { FormTextField, FormSelectField } = useFormFields<TableLayoutFormValues>();
+  const { FormSelectField } = useFormFields<TableLayoutFormValues>();
 
   const isPending = isEdit ? updateMutation.isPending : createMutation.isPending;
+
+  // The table name is always server-assigned — shown read-only, never editable.
+  const displayName = isEdit ? table.name : (nextNameQuery.data ?? '');
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -119,20 +122,23 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
           <SheetTitle>{isEdit ? 'Editar mesa' : 'Agregar mesa'}</SheetTitle>
           <SheetDescription>
             {isEdit
-              ? 'Actualiza el nombre y la capacidad de la mesa.'
+              ? 'Actualiza la capacidad de la mesa.'
               : 'Configura la nueva mesa de esta zona.'}
           </SheetDescription>
         </SheetHeader>
 
         <form.AppForm>
           <form.Form id='add-table-form' className='space-y-4 p-0 md:p-0'>
-            <FormTextField
-              name='name'
-              label='Nombre'
-              required
-              placeholder='e.g. T14'
-              validators={{ onBlur: z.string().min(1, 'El nombre es requerido.') }}
-            />
+            <div className='space-y-1.5'>
+              <Label>Nombre</Label>
+              <div
+                data-testid='table-name-readonly'
+                className='flex h-9 w-full items-center justify-center rounded-md border border-input bg-muted px-3 text-sm font-medium text-muted-foreground'
+              >
+                {displayName}
+              </div>
+              <p className='text-xs text-muted-foreground'>Asignado automáticamente.</p>
+            </div>
             <FormSelectField name='capacity' label='Capacidad' required options={capacityOptions} />
             {!isEdit && (
               <FormSelectField name='shape' label='Forma' required options={shapeOptions} />

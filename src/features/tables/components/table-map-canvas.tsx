@@ -193,6 +193,11 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
      * Recompute the selection overlay rect from the selected node's actual
      * on-screen render (getClientRect accounts for the Stage's scale/position),
      * never from raw percentage coordinates + a separately-tracked zoom.
+     *
+     * Targets the table's RIM node (`#table-rim-<id>`) rather than the whole
+     * table Group — the Group's bounding box also includes the chairs, which
+     * extend beyond the rim and would offset the selection box and inflate the
+     * resize math.
      */
     const syncOverlay = useCallback(() => {
       const stage = stageRef.current;
@@ -201,12 +206,12 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
         setOverlayRect(null);
         return;
       }
-      const node = stage.findOne(`#table-${id}`);
+      const node = stage.findOne(`#table-rim-${id}`);
       if (!node) {
         setOverlayRect(null);
         return;
       }
-      const rect = node.getClientRect();
+      const rect = node.getClientRect({ skipStroke: true });
       setOverlayRect({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
     }, []);
 
@@ -237,10 +242,10 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
       const stage = stageRef.current;
       const id = selectedIdRef.current;
       if (!stage || !id) return;
-      const node = stage.findOne(`#table-${id}`);
+      const node = stage.findOne(`#table-rim-${id}`);
       if (!node) return;
 
-      const rect = node.getClientRect();
+      const rect = node.getClientRect({ skipStroke: true });
       const scale = stage.scaleX();
       const pos = { x: stage.x(), y: stage.y() };
       resizeSessionRef.current = {

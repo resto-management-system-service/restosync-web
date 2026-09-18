@@ -39,45 +39,36 @@ beforeEach(() => {
   vi.mocked(getNextTableName).mockResolvedValue('102');
 });
 
-it('pre-fills the suggested name on open (create mode)', async () => {
+it('shows the suggested name as read-only text (not an input) on open', async () => {
   const onOpenChange = vi.fn();
   renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
 
-  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
+  await waitFor(() => expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('102'));
+  expect(screen.queryByRole('textbox', { name: /nombre/i })).not.toBeInTheDocument();
   expect(getNextTableName).toHaveBeenCalledWith('z1');
 });
 
-it('leaves the suggested name fully editable', async () => {
+it('submits the suggested name unchanged (capacity/shape remain functional)', async () => {
   const onOpenChange = vi.fn();
-  vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: 'CUSTOM' } as Table);
+  vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: '102' } as Table);
 
   renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
 
-  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
+  await waitFor(() => expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('102'));
 
-  await userEvent.clear(screen.getByLabelText(/nombre/i));
-  await userEvent.type(screen.getByLabelText(/nombre/i), 'CUSTOM');
+  // Capacity + shape are still editable selects.
+  await userEvent.click(screen.getByLabelText(/capacidad/i));
+  await userEvent.click(await screen.findByRole('option', { name: '6 personas' }));
+
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
   await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   expect(createTable).toHaveBeenCalledWith({
-    name: 'CUSTOM',
-    capacity: 4,
+    name: '102',
+    capacity: 6,
     shape: 'circle',
     zoneId: 'z1'
   });
-});
-
-it('rejects an empty name (after clearing the suggestion) with an inline error', async () => {
-  const onOpenChange = vi.fn();
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
-
-  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
-  await userEvent.clear(screen.getByLabelText(/nombre/i));
-  await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
-
-  expect(await screen.findByText(/el nombre es requerido/i)).toBeInTheDocument();
-  expect(createTable).not.toHaveBeenCalled();
 });
 
 it('surfaces the backend duplicate-name message via toast (not a silent failure)', async () => {
@@ -86,34 +77,35 @@ it('surfaces the backend duplicate-name message via toast (not a silent failure)
 
   renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
 
-  await waitFor(() => expect(screen.getByLabelText(/nombre/i)).toHaveValue('102'));
+  await waitFor(() => expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('102'));
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Table name "102" already exists'));
   expect(onOpenChange).not.toHaveBeenCalledWith(false);
 });
 
-it('pre-fills the form in edit mode and hides the shape field', () => {
+it('shows the name read-only in edit mode (capacity is the only editable field)', () => {
   const onOpenChange = vi.fn();
   renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={table} zoneId='z1' />);
 
-  expect(screen.getByLabelText(/nombre/i)).toHaveValue('T1');
+  expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('T1');
+  expect(screen.queryByRole('textbox', { name: /nombre/i })).not.toBeInTheDocument();
   expect(screen.getByLabelText(/capacidad/i)).toHaveTextContent('6 personas');
   expect(screen.queryByLabelText(/forma/i)).not.toBeInTheDocument();
 });
 
-it('submits an edit by calling updateTable (not createTable) with the correct id/fields', async () => {
+it('submits an edit with the unchanged name (only capacity is sent as editable)', async () => {
   const onOpenChange = vi.fn();
   vi.mocked(updateTable).mockResolvedValue(table);
 
   renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={table} zoneId='z1' />);
 
-  await userEvent.clear(screen.getByLabelText(/nombre/i));
-  await userEvent.type(screen.getByLabelText(/nombre/i), 'T1-A');
+  await userEvent.click(screen.getByLabelText(/capacidad/i));
+  await userEvent.click(await screen.findByRole('option', { name: '8 personas' }));
   await userEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
 
   await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
-  expect(updateTable).toHaveBeenCalledWith('t1', { name: 'T1-A', capacity: 6 });
+  expect(updateTable).toHaveBeenCalledWith('t1', { name: 'T1', capacity: 8 });
   expect(createTable).not.toHaveBeenCalled();
 });
 

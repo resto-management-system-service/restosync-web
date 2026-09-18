@@ -70,40 +70,40 @@ export default function AddZoneInput({ zones, onCreated }: AddZoneInputProps) {
   };
 
   return (
-    <div className='flex items-center gap-2'>
-      <Input
-        ref={nameInputRef}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
-          if (e.key === 'Escape') cancel();
-        }}
-        placeholder='Nombre de la zona'
-        aria-label='Nombre de la zona'
-        className='h-9 w-40'
-      />
-      <Input
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
-          if (e.key === 'Escape') cancel();
-        }}
-        placeholder='Código'
-        aria-label='Código de la zona'
-        className='h-9 w-20'
-      />
-      <Button
-        type='button'
-        size='icon'
-        className='size-9'
-        isLoading={mutation.isPending}
-        onClick={submit}
-        aria-label='Guardar zona'
-      >
-        <Icons.check className='h-4 w-4' />
-      </Button>
+    <div className='flex flex-col gap-1'>
+      <div className='flex items-center gap-2'>
+        <Input
+          ref={nameInputRef}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit();
+            if (e.key === 'Escape') cancel();
+          }}
+          placeholder='Nombre de la zona'
+          aria-label='Nombre de la zona'
+          className='h-9 w-40'
+        />
+        <div
+          data-testid='zone-code-readonly'
+          className='flex h-9 w-20 items-center justify-center rounded-md border border-input bg-muted px-2 text-sm font-medium text-muted-foreground'
+        >
+          {code}
+        </div>
+        <Button
+          type='button'
+          size='icon'
+          className='size-9'
+          isLoading={mutation.isPending}
+          onClick={submit}
+          aria-label='Guardar zona'
+        >
+          <Icons.check className='h-4 w-4' />
+        </Button>
+      </div>
+      <p className='text-xs text-muted-foreground'>
+        El código se asigna automático — no se puede editar.
+      </p>
     </div>
   );
 }

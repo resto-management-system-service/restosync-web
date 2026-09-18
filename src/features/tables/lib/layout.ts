@@ -82,26 +82,40 @@ export function computeDefaultPlacement(existing: PlacedRect[]): {
   };
 }
 
-/** Semantic fill/stroke colors per table status (Tailwind green/amber/red). */
-export const STATUS_COLORS: Record<TableStatus, { fill: string; stroke: string; label: string }> = {
-  AVAILABLE: { fill: '#22c55e', stroke: '#15803d', label: '#ffffff' },
-  RESERVED: { fill: '#f59e0b', stroke: '#b45309', label: '#ffffff' },
-  OCCUPIED: { fill: '#ef4444', stroke: '#b91c1c', label: '#ffffff' }
+/**
+ * Semantic colors per table status (Tailwind green/amber/red). `fill` is the
+ * solid rim color, `tabletop` is the lighter inner tint, `stroke` is the
+ * mid-tone border, and `label` is the (dark) name-label color.
+ */
+export const STATUS_COLORS: Record<
+  TableStatus,
+  { fill: string; tabletop: string; stroke: string; label: string }
+> = {
+  AVAILABLE: { fill: '#22c55e', tabletop: '#bbf7d0', stroke: '#15803d', label: '#14532d' },
+  RESERVED: { fill: '#f59e0b', tabletop: '#fde68a', stroke: '#b45309', label: '#78350f' },
+  OCCUPIED: { fill: '#ef4444', tabletop: '#fecaca', stroke: '#b91c1c', label: '#7f1d1d' }
 };
 
-/** Spanish display label per table status (used in the selection panel header). */
+/** Spanish display label per table status (used in the selection panel + legend). */
 export const STATUS_LABEL: Record<TableStatus, string> = {
   AVAILABLE: 'Libre',
   RESERVED: 'Reservada',
   OCCUPIED: 'Ocupada'
 };
 
-export const CHAIR_COLOR = { fill: '#f8fafc', stroke: '#94a3b8' };
+/** Status order used when listing all three states (legend, etc.). */
+export const STATUS_ORDER: TableStatus[] = ['AVAILABLE', 'RESERVED', 'OCCUPIED'];
+
+export const CHAIR_COLOR = { fill: '#f8fafc', stroke: '#94a3b8', dot: '#64748b' };
 
 /** Distance (px) from a table's edge to the center of its chairs. */
 const CHAIR_GAP = 10;
 /** Radius (px) of a chair mark. */
 export const CHAIR_RADIUS = 4;
+/** Radius (px) of the filled dot inside a chair (suggests a chair back). */
+export const CHAIR_DOT_RADIUS = 1.5;
+/** Inset (px) of the inner tabletop from the outer rim on all sides. */
+export const TABLE_INSET = 6;
 
 /** Minimum font size (px) for a table's name label. */
 const MIN_LABEL_FONT_SIZE = 11;
@@ -119,23 +133,13 @@ interface Point {
   y: number;
 }
 
-function pointOnRect(distance: number, width: number, height: number): Point {
-  const top = width;
-  const right = height;
-  const bottom = width;
-
-  if (distance < top) return { x: distance, y: 0 };
-  distance -= top;
-  if (distance < right) return { x: width, y: distance };
-  distance -= right;
-  if (distance < bottom) return { x: width - distance, y: height };
-  distance -= bottom;
-  return { x: 0, y: height - distance };
-}
-
 /**
- * Compute chair center offsets (relative to the table's top-left corner)
- * for `capacity` chairs distributed evenly around the table's perimeter.
+ * Compute chair center offsets (relative to the table's top-left corner).
+ *
+ * - `circle`: chairs evenly distributed in a ring around the table.
+ * - `square` / `rounded`: up to 4 chairs, one centered on each side (top,
+ *   right, bottom, left) — NOT distributed around the full perimeter. If
+ *   capacity exceeds 4, the rendered chairs are capped at 4.
  */
 export function chairOffsets(
   shape: TableShape,
@@ -159,18 +163,15 @@ export function chairOffsets(
     return positions;
   }
 
-  // 'rounded' and 'square' both distribute chairs around the rectangle perimeter.
-  const perimeter = 2 * (width + height);
-  for (let i = 0; i < capacity; i++) {
-    const distance = ((i + 0.5) / capacity) * perimeter;
-    const point = pointOnRect(distance, width, height);
-    const dx = point.x - cx;
-    const dy = point.y - cy;
-    const length = Math.hypot(dx, dy) || 1;
-    positions.push({
-      x: point.x + (dx / length) * CHAIR_GAP,
-      y: point.y + (dy / length) * CHAIR_GAP
-    });
+  // square & rounded: one chair per side, capped at 4.
+  const sides: Point[] = [
+    { x: cx, y: -CHAIR_GAP }, // top
+    { x: width + CHAIR_GAP, y: cy }, // right
+    { x: cx, y: height + CHAIR_GAP }, // bottom
+    { x: -CHAIR_GAP, y: cy } // left
+  ];
+  for (let i = 0; i < Math.min(capacity, 4); i++) {
+    positions.push(sides[i]);
   }
   return positions;
 }
