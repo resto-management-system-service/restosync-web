@@ -139,13 +139,27 @@ export const TABLE_INSET = 6;
 
 /** Minimum font size (px) for a table's name label. */
 const MIN_LABEL_FONT_SIZE = 11;
+/** Average advance width of a bold label glyph, as a fraction of the font size. */
+const LABEL_CHAR_WIDTH_RATIO = 0.62;
+/** Horizontal padding (px) reserved on each side of the label inside the shape. */
+const LABEL_HORIZONTAL_PADDING = 8;
 
 /**
- * Font size for a table's name label, scaled proportionally to the table's
- * current size so it grows/shrinks with the shape and never overflows.
+ * Font size for a table's name label, scaled so it grows/shrinks with the
+ * shape AND the text length — a longer code (e.g. "TER101" vs "101") shrinks
+ * enough to stay on a single line within the shape instead of wrapping.
  */
-export function computeLabelFontSize(width: number, height: number): number {
-  return Math.max(MIN_LABEL_FONT_SIZE, Math.min(width, height) * 0.3);
+export function computeLabelFontSize(width: number, height: number, text?: string): number {
+  const sizeBased = Math.max(MIN_LABEL_FONT_SIZE, Math.min(width, height) * 0.3);
+  if (!text) return sizeBased;
+
+  const charCount = text.length;
+  if (charCount === 0) return sizeBased;
+
+  const availableWidth = Math.max(0, width - LABEL_HORIZONTAL_PADDING * 2);
+  const textBased = availableWidth / (charCount * LABEL_CHAR_WIDTH_RATIO);
+
+  return Math.max(MIN_LABEL_FONT_SIZE, Math.min(sizeBased, textBased));
 }
 
 interface Point {

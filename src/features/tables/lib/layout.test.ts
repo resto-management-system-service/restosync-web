@@ -152,4 +152,22 @@ describe('computeLabelFontSize', () => {
     expect(computeLabelFontSize(10, 10)).toBe(11);
     expect(computeLabelFontSize(0, 0)).toBe(11);
   });
+
+  it('shrinks a 6-char name so it fits on one line in a small shape', () => {
+    const width = 80;
+    const shortFont = computeLabelFontSize(width, width, '101');
+    const longFont = computeLabelFontSize(width, width, 'TER101');
+
+    // "TER101" must render smaller than "101" to avoid wrapping to two lines.
+    expect(longFont).toBeLessThan(shortFont);
+
+    // At ~0.62em per glyph, the 6 characters must fit within the shape width
+    // (minus horizontal padding) — i.e. no wrap for the longer code.
+    expect(longFont * 0.62 * 'TER101'.length).toBeLessThanOrEqual(width - 16);
+  });
+
+  it('keeps the size-based font for a short name that already fits', () => {
+    // "101" already fits at the size-based font, so it must not be shrunk.
+    expect(computeLabelFontSize(100, 100, '101')).toBe(computeLabelFontSize(100, 100));
+  });
 });

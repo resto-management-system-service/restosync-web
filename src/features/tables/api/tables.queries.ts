@@ -13,7 +13,13 @@ import {
   updateTableLayout,
   updateZone
 } from './service';
-import type { CreateTableInput, CreateZoneInput, UpdateTableInput, UpdateZoneInput } from './types';
+import type {
+  CreateTableInput,
+  CreateZoneInput,
+  Table,
+  UpdateTableInput,
+  UpdateZoneInput
+} from './types';
 
 // ============================================================
 // Tables Query Key Factory, Query Options & Mutation Options
@@ -63,6 +69,26 @@ export const createTableMutation = mutationOptions({
 export const updateTableLayoutMutation = mutationOptions({
   mutationFn: ({ id, layout }: { id: string; layout: UpdateTableLayoutDto }) =>
     updateTableLayout(id, layout),
+  // Optimistically write the new layout into the tables cache BEFORE the request
+  // resolves, so the authoritative source of truth reflects the change at the
+  // same moment the canvas clears its live resize preview. Without this, the
+  // shape falls back to the stale cached size on release (a visible "snap back")
+  // until the refetch completes — and the selection overlay and shape briefly
+  // read different sizes.
+  onMutate: async ({ id, layout }) => {
+    const queryClient = getQueryClient();
+    await queryClient.cancelQueries({ queryKey: tablesKeys.list() });
+    const previous = queryClient.getQueryData<Table[]>(tablesKeys.list());
+    queryClient.setQueryData<Table[]>(tablesKeys.list(), (old) =>
+      (old ?? []).map((t) => (t.id === id ? ({ ...t, ...layout } as Table) : t))
+    );
+    return { previous };
+  },
+  onError: (_error, _variables, context) => {
+    if (context?.previous) {
+      getQueryClient().setQueryData(tablesKeys.list(), context.previous);
+    }
+  },
   onSettled: invalidateAll
 });
 

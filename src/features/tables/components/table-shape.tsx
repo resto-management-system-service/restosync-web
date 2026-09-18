@@ -47,7 +47,7 @@ export default function TableShape({
   const colors = STATUS_COLORS[table.status];
   const shape = table.shape ?? 'rounded';
   const chairs = chairOffsets(shape, table.capacity ?? 0, width, height);
-  const labelFontSize = computeLabelFontSize(width, height);
+  const labelFontSize = computeLabelFontSize(width, height, table.name);
 
   return (
     <Group
