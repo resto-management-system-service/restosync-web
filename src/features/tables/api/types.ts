@@ -44,6 +44,8 @@ export interface Zone {
   id: string;
   restaurantId: string;
   name: string;
+  /** Short alphanumeric code used as a table-name prefix (e.g. "1", "T", "VIP"). */
+  code: string;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -63,7 +65,14 @@ export interface UpdateTableInput {
   capacity: number;
 }
 
-/** Fields editable via PATCH /zones/:id (name only in this UI). */
-export interface UpdateZoneInput {
+/** Input required to create a zone. */
+export interface CreateZoneInput {
   name: string;
+  code: string;
+}
+
+/** Fields editable via PATCH /zones/:id. */
+export interface UpdateZoneInput {
+  name?: string;
+  code?: string;
 }

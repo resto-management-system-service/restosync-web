@@ -34,6 +34,7 @@ export default function FloorPlanView() {
   const [activeZoneId, setActiveZoneId] = useState('');
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Table | null>(null);
   const [pendingEdit, setPendingEdit] = useState<Table | null>(null);
   const [pendingDeleteZone, setPendingDeleteZone] = useState<Zone | null>(null);
@@ -75,6 +76,11 @@ export default function FloorPlanView() {
     updateMutation.mutate({ id, layout });
   };
 
+  const handleZoneChange = (zoneId: string) => {
+    setActiveZoneId(zoneId);
+    setSelectedTableId(null);
+  };
+
   const isLoading = zonesQuery.isPending || tablesQuery.isPending;
   const isError = zonesQuery.isError || tablesQuery.isError;
 
@@ -107,8 +113,8 @@ export default function FloorPlanView() {
             zones={zones}
             activeZoneId={effectiveZoneId}
             editing={editing}
-            onZoneChange={setActiveZoneId}
-            onZoneCreated={(zoneId) => setActiveZoneId(zoneId)}
+            onZoneChange={handleZoneChange}
+            onZoneCreated={handleZoneChange}
             onDeleteZone={setPendingDeleteZone}
           />
         )}
@@ -125,7 +131,12 @@ export default function FloorPlanView() {
           <Button
             type='button'
             variant={editing ? 'default' : 'outline'}
-            onClick={() => setEditing((prev) => !prev)}
+            onClick={() => {
+              setEditing((prev) => {
+                if (prev) setSelectedTableId(null);
+                return !prev;
+              });
+            }}
           >
             <Icons.edit className='mr-2 h-4 w-4' />
             {editing ? 'Guardar mapa' : 'Editar mapa'}
@@ -151,6 +162,8 @@ export default function FloorPlanView() {
               key={effectiveZoneId}
               tables={zoneTables}
               editing={editing}
+              selectedTableId={selectedTableId}
+              onSelectedTableIdChange={setSelectedTableId}
               onUpdateTable={handleUpdateTable}
               onSelectTable={(table) => toast.info(`Abrir orden de la mesa ${table.name}`)}
               onEditRequest={setPendingEdit}

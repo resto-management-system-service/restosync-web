@@ -6,13 +6,14 @@ import {
   createZone,
   deleteTable,
   deleteZone,
+  getNextTableName,
   getTables,
   getZones,
   updateTable,
   updateTableLayout,
   updateZone
 } from './service';
-import type { CreateTableInput, UpdateTableInput, UpdateZoneInput } from './types';
+import type { CreateTableInput, CreateZoneInput, UpdateTableInput, UpdateZoneInput } from './types';
 
 // ============================================================
 // Tables Query Key Factory, Query Options & Mutation Options
@@ -21,7 +22,8 @@ import type { CreateTableInput, UpdateTableInput, UpdateZoneInput } from './type
 export const tablesKeys = {
   all: ['tables'] as const,
   zones: () => [...tablesKeys.all, 'zones'] as const,
-  list: () => [...tablesKeys.all, 'list'] as const
+  list: () => [...tablesKeys.all, 'list'] as const,
+  nextTableName: (zoneId: string) => [...tablesKeys.all, 'next-table-name', zoneId] as const
 };
 
 export const zonesQueryOptions = () =>
@@ -36,6 +38,19 @@ export const tablesQueryOptions = () =>
     queryKey: tablesKeys.list(),
     queryFn: () => getTables(),
     staleTime: 0
+  });
+
+/**
+ * Fetch a suggested table name for a zone. A read, fetched on-demand when the
+ * add-table sheet opens — not a long-lived cached key that needs invalidation,
+ * so the suggestion is freshly computed each time the sheet opens.
+ */
+export const nextTableNameQueryOptions = (zoneId: string) =>
+  queryOptions({
+    queryKey: tablesKeys.nextTableName(zoneId),
+    queryFn: () => getNextTableName(zoneId),
+    staleTime: 0,
+    gcTime: 0
   });
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: tablesKeys.all });
@@ -62,7 +77,7 @@ export const deleteTableMutation = mutationOptions({
 });
 
 export const createZoneMutation = mutationOptions({
-  mutationFn: (name: string) => createZone(name),
+  mutationFn: (input: CreateZoneInput) => createZone(input),
   onSettled: invalidateAll
 });
 

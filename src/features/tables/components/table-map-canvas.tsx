@@ -6,8 +6,16 @@ import { Layer, Stage } from 'react-konva';
 import type { UpdateTableLayoutDto } from '@/api-client';
 import type { Table } from '../api/types';
 import { percentToPixel, pixelToPercent } from '../lib/layout';
-import { ZOOM_STEP, computeFit, zoomAtPoint } from '../lib/canvas-view';
+import {
+  ZOOM_STEP,
+  computeFit,
+  computeResize,
+  screenToWorld,
+  zoomAtPoint
+} from '../lib/canvas-view';
+import type { Corner, Point } from '../lib/canvas-view';
 import TableShape from './table-shape';
+import TableSelectionOverlay from './table-selection-overlay';
 
 export interface TableMapCanvasHandle {
   fitToView: () => void;
@@ -16,6 +24,8 @@ export interface TableMapCanvasHandle {
 interface TableMapCanvasProps {
   tables: Table[];
   editing: boolean;
+  selectedTableId: string | null;
+  onSelectedTableIdChange: (id: string | null) => void;
   onUpdateTable: (id: string, layout: UpdateTableLayoutDto) => void;
   onSelectTable: (table: Table) => void;
   onEditRequest: (table: Table) => void;
@@ -41,7 +51,16 @@ function isPlaced(table: Table): table is PlacedTable {
 
 const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
   function TableMapCanvas(
-    { tables, editing, onUpdateTable, onSelectTable, onEditRequest, onDeleteRequest },
+    {
+      tables,
+      editing,
+      selectedTableId,
+      onSelectedTableIdChange,
+      onUpdateTable,
+      onSelectTable,
+      onEditRequest,
+      onDeleteRequest
+    },
     ref
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -49,11 +68,31 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
     const [size, setSize] = useState({ width: 0, height: 0 });
     const [resizeOverride, setResizeOverride] = useState<{
       id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null>(null);
+    const [overlayRect, setOverlayRect] = useState<{
+      x: number;
+      y: number;
       width: number;
       height: number;
     } | null>(null);
 
+    const selectedIdRef = useRef(selectedTableId);
+    selectedIdRef.current = selectedTableId;
+
+    const resizeSessionRef = useRef<{
+      id: string;
+      corner: Corner;
+      worldRect: { x: number; y: number; width: number; height: number };
+      scale: number;
+      pos: Point;
+    } | null>(null);
+
     const placedTables = tables.filter(isPlaced);
+    const selectedTable = placedTables.find((t) => t.id === selectedTableId) ?? null;
 
     const fitToView = useCallback(() => {
       const stage = stageRef.current;
@@ -116,10 +155,16 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
 
     // Only pan when the drag starts on empty canvas (the stage itself), so a
     // drag starting on a table shape still moves that table, not the view.
-    const handleStageMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-      const stage = e.target.getStage();
-      if (stage) stage.draggable(e.target === stage);
-    }, []);
+    const handleStageMouseDown = useCallback(
+      (e: Konva.KonvaEventObject<MouseEvent>) => {
+        const stage = e.target.getStage();
+        if (stage) stage.draggable(e.target === stage);
+        if (e.target === stage && editing) {
+          onSelectedTableIdChange(null);
+        }
+      },
+      [editing, onSelectedTableIdChange]
+    );
 
     const handleStageMouseUp = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
       const stage = e.target.getStage();
@@ -136,19 +181,120 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
       [onUpdateTable, size]
     );
 
-    const handleResize = useCallback((id: string, width: number, height: number) => {
-      setResizeOverride({ id, width, height });
+    const handleTableSelect = useCallback(
+      (table: Table) => {
+        if (editing) onSelectedTableIdChange(table.id);
+        else onSelectTable(table);
+      },
+      [editing, onSelectedTableIdChange, onSelectTable]
+    );
+
+    /**
+     * Recompute the selection overlay rect from the selected node's actual
+     * on-screen render (getClientRect accounts for the Stage's scale/position),
+     * never from raw percentage coordinates + a separately-tracked zoom.
+     */
+    const syncOverlay = useCallback(() => {
+      const stage = stageRef.current;
+      const id = selectedIdRef.current;
+      if (!stage || !id) {
+        setOverlayRect(null);
+        return;
+      }
+      const node = stage.findOne(`#table-${id}`);
+      if (!node) {
+        setOverlayRect(null);
+        return;
+      }
+      const rect = node.getClientRect();
+      setOverlayRect({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
     }, []);
 
-    const handleResizeEnd = useCallback(
-      (id: string, width: number, height: number) => {
-        setResizeOverride(null);
-        onUpdateTable(id, {
-          width: pixelToPercent(width, size.width),
-          height: pixelToPercent(height, size.height)
-        });
+    // Re-sync on React-driven changes (selection, size, live resize, tables, edit mode).
+    useEffect(() => {
+      syncOverlay();
+    }, [syncOverlay, selectedTableId, size, resizeOverride, tables, editing]);
+
+    // Re-sync on Konva-only transform changes (zoom/pan) that don't re-render React.
+    useEffect(() => {
+      const stage = stageRef.current;
+      if (!stage) return;
+      const events = ['wheel', 'dragmove', 'dragend'] as const;
+      events.forEach((evt) => stage.on(evt, syncOverlay));
+      return () => {
+        events.forEach((evt) => stage.off(evt, syncOverlay));
+      };
+    }, [syncOverlay, size]);
+
+    const toCanvasPoint = useCallback((clientX: number, clientY: number): Point => {
+      const el = containerRef.current;
+      if (!el) return { x: clientX, y: clientY };
+      const r = el.getBoundingClientRect();
+      return { x: clientX - r.left, y: clientY - r.top };
+    }, []);
+
+    const handleResizeStart = useCallback((corner: Corner) => {
+      const stage = stageRef.current;
+      const id = selectedIdRef.current;
+      if (!stage || !id) return;
+      const node = stage.findOne(`#table-${id}`);
+      if (!node) return;
+
+      const rect = node.getClientRect();
+      const scale = stage.scaleX();
+      const pos = { x: stage.x(), y: stage.y() };
+      resizeSessionRef.current = {
+        id,
+        corner,
+        scale,
+        pos,
+        worldRect: {
+          x: (rect.x - pos.x) / scale,
+          y: (rect.y - pos.y) / scale,
+          width: rect.width / scale,
+          height: rect.height / scale
+        }
+      };
+    }, []);
+
+    const applyResize = useCallback(
+      (corner: Corner, pointer: Point, persist: boolean) => {
+        const session = resizeSessionRef.current;
+        if (!session) return;
+
+        const worldPointer = screenToWorld(pointer, session.scale, session.pos);
+        const next = computeResize(corner, worldPointer, session.worldRect);
+
+        if (persist) {
+          onUpdateTable(session.id, {
+            width: pixelToPercent(next.width, size.width),
+            height: pixelToPercent(next.height, size.height),
+            positionX: pixelToPercent(next.x, size.width),
+            positionY: pixelToPercent(next.y, size.height)
+          });
+          setResizeOverride(null);
+          resizeSessionRef.current = null;
+        } else {
+          setResizeOverride({
+            id: session.id,
+            x: next.x,
+            y: next.y,
+            width: next.width,
+            height: next.height
+          });
+        }
       },
       [onUpdateTable, size]
+    );
+
+    const handleResizeMove = useCallback(
+      (corner: Corner, pointer: Point) => applyResize(corner, pointer, false),
+      [applyResize]
+    );
+
+    const handleResizeEnd = useCallback(
+      (corner: Corner, pointer: Point) => applyResize(corner, pointer, true),
+      [applyResize]
     );
 
     return (
@@ -174,22 +320,32 @@ const TableMapCanvas = forwardRef<TableMapCanvasHandle, TableMapCanvasProps>(
                   <TableShape
                     key={table.id}
                     table={table}
-                    x={percentToPixel(table.positionX, size.width)}
-                    y={percentToPixel(table.positionY, size.height)}
+                    x={override ? override.x : percentToPixel(table.positionX, size.width)}
+                    y={override ? override.y : percentToPixel(table.positionY, size.height)}
                     width={override ? override.width : percentToPixel(table.width, size.width)}
                     height={override ? override.height : percentToPixel(table.height, size.height)}
                     editing={editing}
                     onDragEnd={handleDragEnd}
-                    onResize={handleResize}
-                    onResizeEnd={handleResizeEnd}
-                    onSelect={onSelectTable}
-                    onEditRequest={onEditRequest}
-                    onDeleteRequest={onDeleteRequest}
+                    onDragMove={syncOverlay}
+                    onSelect={handleTableSelect}
                   />
                 );
               })}
             </Layer>
           </Stage>
+        )}
+
+        {editing && selectedTable && overlayRect && (
+          <TableSelectionOverlay
+            rect={overlayRect}
+            table={selectedTable}
+            onEdit={onEditRequest}
+            onDelete={onDeleteRequest}
+            onResizeStart={handleResizeStart}
+            onResizeMove={handleResizeMove}
+            onResizeEnd={handleResizeEnd}
+            toCanvasPoint={toCanvasPoint}
+          />
         )}
       </div>
     );

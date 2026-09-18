@@ -2,32 +2,44 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
 import { createZoneMutation } from '../api/tables.queries';
+import { suggestNextZoneCode } from '../lib/naming';
+import type { Zone } from '../api/types';
 
 interface AddZoneInputProps {
+  zones: Zone[];
   onCreated?: (zoneId: string) => void;
 }
 
-export default function AddZoneInput({ onCreated }: AddZoneInputProps) {
+export default function AddZoneInput({ zones, onCreated }: AddZoneInputProps) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [code, setCode] = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (adding) inputRef.current?.focus();
+    if (adding) nameInputRef.current?.focus();
   }, [adding]);
 
   const mutation = useMutation({
     ...createZoneMutation,
     onSuccess: (zone) => {
       setName('');
+      setCode('');
       setAdding(false);
       onCreated?.(zone.id);
-    }
+    },
+    onError: (error) => toast.error(error.message)
   });
+
+  const startAdding = () => {
+    setCode(suggestNextZoneCode(zones));
+    setAdding(true);
+  };
 
   if (!adding) {
     return (
@@ -37,7 +49,7 @@ export default function AddZoneInput({ onCreated }: AddZoneInputProps) {
         size='icon'
         className='size-9'
         aria-label='Agregar zona'
-        onClick={() => setAdding(true)}
+        onClick={startAdding}
       >
         <Icons.add className='h-4 w-4' />
       </Button>
@@ -45,26 +57,42 @@ export default function AddZoneInput({ onCreated }: AddZoneInputProps) {
   }
 
   const submit = () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    mutation.mutate(trimmed);
+    const trimmedName = name.trim();
+    const trimmedCode = code.trim();
+    if (!trimmedName || !trimmedCode) return;
+    mutation.mutate({ name: trimmedName, code: trimmedCode });
+  };
+
+  const cancel = () => {
+    setName('');
+    setCode('');
+    setAdding(false);
   };
 
   return (
     <div className='flex items-center gap-2'>
       <Input
-        ref={inputRef}
+        ref={nameInputRef}
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit();
-          if (e.key === 'Escape') {
-            setName('');
-            setAdding(false);
-          }
+          if (e.key === 'Escape') cancel();
         }}
         placeholder='Nombre de la zona'
+        aria-label='Nombre de la zona'
         className='h-9 w-40'
+      />
+      <Input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit();
+          if (e.key === 'Escape') cancel();
+        }}
+        placeholder='Código'
+        aria-label='Código de la zona'
+        className='h-9 w-20'
       />
       <Button
         type='button'
@@ -72,6 +100,7 @@ export default function AddZoneInput({ onCreated }: AddZoneInputProps) {
         className='size-9'
         isLoading={mutation.isPending}
         onClick={submit}
+        aria-label='Guardar zona'
       >
         <Icons.check className='h-4 w-4' />
       </Button>
