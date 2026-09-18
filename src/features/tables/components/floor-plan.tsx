@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -45,8 +45,23 @@ export default function FloorPlanView() {
   const [pendingEdit, setPendingEdit] = useState<Table | null>(null);
   const [pendingDeleteZone, setPendingDeleteZone] = useState<Zone | null>(null);
   const [canvasHeight, setCanvasHeight] = useState(DEFAULT_CANVAS_HEIGHT);
+  const [canvasWidth, setCanvasWidth] = useState(0);
   const canvasRef = useRef<TableMapCanvasHandle>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const dragStartHeightRef = useRef(DEFAULT_CANVAS_HEIGHT);
+
+  const isUnassignedView = activeZoneId === UNASSIGNED_VIEW_ID;
+
+  useEffect(() => {
+    if (isUnassignedView) return;
+    const el = canvasContainerRef.current;
+    if (!el) return;
+    const measure = () => setCanvasWidth(el.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isUnassignedView]);
 
   const zonesQuery = useQuery(zonesQueryOptions());
   const tablesQuery = useQuery(tablesQueryOptions());
@@ -55,7 +70,6 @@ export default function FloorPlanView() {
   const tables = tablesQuery.data ?? [];
 
   const unassignedTables = tables.filter((t) => t.zoneId === null);
-  const isUnassignedView = activeZoneId === UNASSIGNED_VIEW_ID;
 
   const activeZone = isUnassignedView
     ? null
@@ -201,7 +215,12 @@ export default function FloorPlanView() {
         />
       ) : (
         <div className='rounded-lg border'>
-          <div className='relative' data-testid='canvas-container' style={{ height: canvasHeight }}>
+          <div
+            ref={canvasContainerRef}
+            className='relative'
+            data-testid='canvas-container'
+            style={{ height: canvasHeight }}
+          >
             {isError ? (
               <Alert variant='destructive' className='m-4'>
                 <Icons.alertCircle className='h-4 w-4' />
@@ -249,6 +268,7 @@ export default function FloorPlanView() {
         }}
         table={pendingEdit}
         zoneId={effectiveZoneId}
+        canvasSize={{ width: canvasWidth, height: canvasHeight }}
       />
       <DeleteTableDialog
         table={pendingDelete}

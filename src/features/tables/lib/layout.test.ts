@@ -3,6 +3,7 @@ import {
   chairOffsets,
   computeDefaultPlacement,
   computeLabelFontSize,
+  computeSquareSize,
   percentToPixel,
   pixelToPercent,
   rectsOverlap
@@ -74,6 +75,21 @@ describe('computeDefaultPlacement', () => {
     const placed = { ...placement, width: 0.16, height: 0.16 };
 
     existing.forEach((t) => expect(rectsOverlap(placed, t)).toBe(false));
+  });
+});
+
+describe('computeSquareSize', () => {
+  it('renders square pixels on a non-square canvas', () => {
+    const size = computeSquareSize({ width: 600, height: 260 });
+    expect(size.width * 600).toBeCloseTo(size.height * 260, 10);
+  });
+
+  it('keeps equal fractions on a square canvas', () => {
+    expect(computeSquareSize({ width: 1000, height: 1000 })).toEqual({ width: 0.16, height: 0.16 });
+  });
+
+  it('falls back to the default size for a zero-dimension canvas', () => {
+    expect(computeSquareSize({ width: 0, height: 0 })).toEqual({ width: 0.16, height: 0.16 });
   });
 });
 

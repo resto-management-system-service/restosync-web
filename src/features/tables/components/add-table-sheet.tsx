@@ -47,9 +47,17 @@ interface AddTableSheetProps {
   /** null → create a new table; a Table → edit that table's name/capacity. */
   table: Table | null;
   zoneId: string;
+  /** Canvas pixel dimensions, used to compute an initially-square default size. */
+  canvasSize: { width: number; height: number };
 }
 
-export default function AddTableSheet({ open, onOpenChange, table, zoneId }: AddTableSheetProps) {
+export default function AddTableSheet({
+  open,
+  onOpenChange,
+  table,
+  zoneId,
+  canvasSize
+}: AddTableSheetProps) {
   const isEdit = table !== null;
 
   const defaultValues: TableLayoutFormValues = isEdit
@@ -84,7 +92,7 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
       if (isEdit && table) {
         updateMutation.mutate({ id: table.id, input: toUpdateTableInput(value) });
       } else {
-        createMutation.mutate(toCreateTableInput(value, zoneId));
+        createMutation.mutate(toCreateTableInput(value, zoneId, canvasSize));
       }
     }
   });

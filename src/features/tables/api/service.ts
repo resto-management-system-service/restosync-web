@@ -16,7 +16,7 @@ import {
   type UpdateTableLayoutDto,
   type UpdateZoneDto
 } from '@/api-client';
-import { computeDefaultPlacement, DEFAULT_TABLE_SIZE } from '../lib/layout';
+import { computeDefaultPlacement, computeSquareSize } from '../lib/layout';
 import type {
   CreateTableInput,
   CreateZoneInput,
@@ -98,6 +98,10 @@ export async function createTable(input: CreateTableInput): Promise<Table> {
 
   const created = data as Table;
 
+  // Compute an initially-square default size from the canvas aspect ratio so a
+  // "square"/"circle" table renders square in pixels on non-square canvases.
+  const size = computeSquareSize(input.canvasSize);
+
   // Pick a non-overlapping default spot based on what's already in the zone.
   let placement = { positionX: 0.5, positionY: 0.5 };
   try {
@@ -117,7 +121,7 @@ export async function createTable(input: CreateTableInput): Promise<Table> {
         width: t.width as number,
         height: t.height as number
       }));
-    placement = computeDefaultPlacement(placedInZone);
+    placement = computeDefaultPlacement(placedInZone, size);
   } catch {
     // Fall back to the center default if existing tables can't be read.
   }
@@ -125,8 +129,8 @@ export async function createTable(input: CreateTableInput): Promise<Table> {
   return updateTableLayout(created.id, {
     zoneId: input.zoneId,
     shape: input.shape,
-    width: DEFAULT_TABLE_SIZE.width,
-    height: DEFAULT_TABLE_SIZE.height,
+    width: size.width,
+    height: size.height,
     ...placement
   });
 }

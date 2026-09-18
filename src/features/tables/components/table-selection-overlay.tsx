@@ -10,11 +10,11 @@ import { STATUS_LABEL } from '../lib/layout';
 
 const HANDLE_SIZE = 12;
 /** Gap (px) between the selection box's edge and the options tab. */
-const TAB_OFFSET = 12;
+const TAB_OFFSET = 20;
 /** Width/height (px) of the options tab. */
 const TAB_SIZE = 22;
 /** Gap (px) between the tab and the options panel. */
-const PANEL_GAP = 4;
+const PANEL_GAP = 8;
 const PANEL_CLOSE_DELAY_MS = 150;
 const BLOCKED_MESSAGE = 'No se puede editar o eliminar una mesa reservada u ocupada';
 
@@ -49,7 +49,12 @@ export default function TableSelectionOverlay({
   toCanvasPoint
 }: TableSelectionOverlayProps) {
   const [panelOpen, setPanelOpen] = useState(false);
-  const [activeCorner, setActiveCorner] = useState<Corner | null>(null);
+  // The active resize corner is tracked in a ref, not state: it's written on
+  // pointerdown and read on every pointermove/pointerup within the same drag
+  // gesture. Reading it from state (a closure captured at render time) could
+  // gate off the first gesture's move/end when the re-render hasn't committed
+  // yet — the classic "first resize silently reverts" stale-closure bug.
+  const activeCornerRef = useRef<Corner | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isAvailable = table.status === 'AVAILABLE';
@@ -73,18 +78,18 @@ export default function TableSelectionOverlay({
 
   const handlePointerDown = (corner: Corner) => (e: React.PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    setActiveCorner(corner);
+    activeCornerRef.current = corner;
     onResizeStart(corner);
   };
 
   const handlePointerMove = (corner: Corner) => (e: React.PointerEvent<HTMLDivElement>) => {
-    if (activeCorner !== corner) return;
+    if (activeCornerRef.current !== corner) return;
     onResizeMove(corner, toCanvasPoint(e.clientX, e.clientY));
   };
 
   const handlePointerEnd = (corner: Corner) => (e: React.PointerEvent<HTMLDivElement>) => {
-    if (activeCorner !== corner) return;
-    setActiveCorner(null);
+    if (activeCornerRef.current !== corner) return;
+    activeCornerRef.current = null;
     onResizeEnd(corner, toCanvasPoint(e.clientX, e.clientY));
   };
 
