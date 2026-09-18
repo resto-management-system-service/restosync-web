@@ -255,9 +255,9 @@ it('renders one chair per capacity for a circle table', () => {
   expect(chairPositions).toHaveLength(6);
 });
 
-it('caps square chairs at 4 (one per side)', () => {
+it('renders chairs matching square capacity (not capped at 4)', () => {
   renderShape({ table: { ...table, shape: 'square', capacity: 8 } });
-  expect(chairPositions).toHaveLength(4);
+  expect(chairPositions).toHaveLength(8);
 });
 
 it('keeps the label centered and scales its font with the shape size', () => {

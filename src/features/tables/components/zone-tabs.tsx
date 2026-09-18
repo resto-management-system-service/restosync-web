@@ -18,7 +18,11 @@ interface ZoneTabsProps {
   zones: Zone[];
   activeZoneId: string;
   editing: boolean;
+  /** Number of tables with zoneId === null; when 0 the tab is hidden. */
+  unassignedCount: number;
+  isUnassignedActive: boolean;
   onZoneChange: (zoneId: string) => void;
+  onSelectUnassigned: () => void;
   onZoneCreated?: (zoneId: string) => void;
   onDeleteZone?: (zone: Zone) => void;
 }
@@ -27,7 +31,10 @@ export default function ZoneTabs({
   zones,
   activeZoneId,
   editing,
+  unassignedCount,
+  isUnassignedActive,
   onZoneChange,
+  onSelectUnassigned,
   onZoneCreated,
   onDeleteZone
 }: ZoneTabsProps) {
@@ -85,6 +92,23 @@ export default function ZoneTabs({
             </div>
           );
         })}
+
+        {unassignedCount > 0 && (
+          <button
+            type='button'
+            role='tab'
+            aria-selected={isUnassignedActive}
+            onClick={onSelectUnassigned}
+            className={cn(
+              'inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow]',
+              isUnassignedActive
+                ? 'bg-amber-500/20 text-amber-900 shadow-sm dark:text-amber-100'
+                : 'text-amber-700 dark:text-amber-300'
+            )}
+          >
+            Sin asignar ({unassignedCount})
+          </button>
+        )}
       </div>
       <AddZoneInput zones={zones} onCreated={onZoneCreated} />
     </div>

@@ -28,17 +28,15 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-it('shows the code read-only and keeps the name editable', () => {
+it('keeps the name editable and does not show the internal code', () => {
   renderWithProviders(<RenameZoneInput zone={zone} onDone={() => {}} />);
-
-  expect(screen.getByTestId('zone-code-readonly')).toHaveTextContent('1');
-  expect(screen.queryByLabelText(/código de la zona/i)).not.toBeInTheDocument();
 
   const nameInput = screen.getByLabelText(/nuevo nombre/i);
   expect(nameInput).toHaveValue('Piso 1');
+  expect(screen.queryByTestId('zone-code-readonly')).not.toBeInTheDocument();
 });
 
-it('renames the zone sending only the name (code untouched)', async () => {
+it('renames the zone sending only the full name (no auto-combine)', async () => {
   const onDone = vi.fn();
   vi.mocked(updateZone).mockResolvedValue(zone);
 

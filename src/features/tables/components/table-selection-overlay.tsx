@@ -9,7 +9,12 @@ import type { Corner, Point } from '../lib/canvas-view';
 import { STATUS_LABEL } from '../lib/layout';
 
 const HANDLE_SIZE = 12;
-const TAB_OFFSET = 8;
+/** Gap (px) between the selection box's edge and the options tab. */
+const TAB_OFFSET = 12;
+/** Width/height (px) of the options tab. */
+const TAB_SIZE = 22;
+/** Gap (px) between the tab and the options panel. */
+const PANEL_GAP = 4;
 const PANEL_CLOSE_DELAY_MS = 150;
 const BLOCKED_MESSAGE = 'No se puede editar o eliminar una mesa reservada u ocupada';
 
@@ -136,8 +141,8 @@ export default function TableSelectionOverlay({
         style={{
           left: rect.width + TAB_OFFSET,
           top: rect.height / 2,
-          width: 22,
-          height: 22,
+          width: TAB_SIZE,
+          height: TAB_SIZE,
           transform: 'translateY(-50%)',
           cursor: 'pointer'
         }}
@@ -153,7 +158,7 @@ export default function TableSelectionOverlay({
           data-testid='selection-panel'
           className='pointer-events-auto absolute z-10 w-40 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md'
           style={{
-            left: rect.width + TAB_OFFSET + 26,
+            left: rect.width + TAB_OFFSET + TAB_SIZE + PANEL_GAP,
             top: rect.height / 2,
             transform: 'translateY(-50%)'
           }}

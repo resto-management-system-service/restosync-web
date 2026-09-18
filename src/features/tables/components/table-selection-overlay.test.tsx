@@ -67,6 +67,15 @@ it('renders exactly four corner resize handles (no edge/midpoint handles)', () =
   expect(screen.getByTestId('resize-handle-br')).toBeInTheDocument();
 });
 
+it('positions the options tab with a gap from the selection box edge', () => {
+  renderOverlay();
+
+  const tab = screen.getByTestId('selection-tab');
+  // TAB_OFFSET (12px) gap to the right of the selection box's right edge.
+  const gap = parseFloat(tab.style.left) - rect.width;
+  expect(gap).toBe(12);
+});
+
 it('opens the panel on tab hover without any click', async () => {
   const { onEdit, onDelete } = renderOverlay();
 
