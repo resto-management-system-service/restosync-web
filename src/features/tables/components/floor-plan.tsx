@@ -16,6 +16,7 @@ import {
   updateTableLayoutMutation,
   zonesQueryOptions
 } from '../api/tables.queries';
+import { useTableStatusRealtime } from '../api/realtime';
 import type { Table, Zone } from '../api/types';
 import { DEFAULT_CANVAS_HEIGHT, clampCanvasHeight } from '../lib/canvas-view';
 import { computeDefaultPlacement } from '../lib/layout';
@@ -37,6 +38,8 @@ const TableMapCanvas = dynamic(() => import('./table-map-canvas'), {
 });
 
 export default function FloorPlanView() {
+  useTableStatusRealtime();
+
   const [activeZoneId, setActiveZoneId] = useState('');
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
