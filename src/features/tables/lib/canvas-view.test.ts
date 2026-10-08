@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_CANVAS_HEIGHT,
+  MAX_TABLE_SIZE,
   MAX_ZOOM,
   MIN_CANVAS_HEIGHT,
+  MIN_TABLE_SIZE,
   MIN_ZOOM,
   clampCanvasHeight,
   clampZoom,
+  computeCornerResize,
   computeFit,
+  computeResize,
+  oppositeCorner,
+  screenToWorld,
   zoomAtPoint
 } from './canvas-view';
 
@@ -76,5 +82,89 @@ describe('computeFit', () => {
     expect(Number.isFinite(result.scale)).toBe(true);
     expect(Number.isFinite(result.position.x)).toBe(true);
     expect(Number.isFinite(result.position.y)).toBe(true);
+  });
+});
+
+describe('screenToWorld', () => {
+  it('undoes the stage scale + position', () => {
+    expect(screenToWorld({ x: 200, y: 150 }, 2, { x: 100, y: 50 })).toEqual({ x: 50, y: 50 });
+  });
+});
+
+describe('oppositeCorner', () => {
+  it('maps each corner to its diagonal opposite', () => {
+    expect(oppositeCorner('tl')).toBe('br');
+    expect(oppositeCorner('br')).toBe('tl');
+    expect(oppositeCorner('tr')).toBe('bl');
+    expect(oppositeCorner('bl')).toBe('tr');
+  });
+});
+
+describe('computeCornerResize', () => {
+  it('scales a square proportionally (aspect ratio never changes)', () => {
+    const result = computeCornerResize(
+      { x: 0, y: 0 },
+      { x: 200, y: 200 },
+      { width: 100, height: 100 }
+    );
+    expect(result).toEqual({ width: 200, height: 200 });
+    expect(result.width / result.height).toBeCloseTo(1, 10);
+  });
+
+  it('preserves a non-square aspect ratio while resizing', () => {
+    // 100x50 (aspect 2:1) — dragging diagonally must keep 2:1.
+    const result = computeCornerResize(
+      { x: 0, y: 0 },
+      { x: 100, y: 100 },
+      { width: 100, height: 50 }
+    );
+    expect(result.width / result.height).toBeCloseTo(2, 10);
+  });
+
+  it('clamps the size to MIN_TABLE_SIZE', () => {
+    const result = computeCornerResize({ x: 0, y: 0 }, { x: 1, y: 1 }, { width: 100, height: 100 });
+    expect(result.width).toBe(MIN_TABLE_SIZE);
+    expect(result.height).toBe(MIN_TABLE_SIZE);
+  });
+
+  it('clamps the size to MAX_TABLE_SIZE', () => {
+    const result = computeCornerResize(
+      { x: 0, y: 0 },
+      { x: 100000, y: 100000 },
+      { width: 100, height: 100 }
+    );
+    expect(result.width).toBe(MAX_TABLE_SIZE);
+    expect(result.height).toBe(MAX_TABLE_SIZE);
+  });
+});
+
+describe('computeResize', () => {
+  const rect = { x: 100, y: 100, width: 100, height: 100 };
+
+  it('keeps the top-left anchor fixed when dragging the bottom-right corner', () => {
+    const result = computeResize('br', { x: 250, y: 250 }, rect);
+    expect(result).toEqual({ x: 100, y: 100, width: 150, height: 150 });
+  });
+
+  it('keeps the bottom-right anchor fixed when dragging the top-left corner', () => {
+    const result = computeResize('tl', { x: 50, y: 50 }, rect);
+    expect(result).toEqual({ x: 50, y: 50, width: 150, height: 150 });
+  });
+
+  it('keeps the bottom-left anchor fixed when dragging the top-right corner', () => {
+    const result = computeResize('tr', { x: 250, y: 50 }, rect);
+    expect(result).toEqual({ x: 100, y: 50, width: 150, height: 150 });
+  });
+
+  it('keeps the top-right anchor fixed when dragging the bottom-left corner', () => {
+    const result = computeResize('bl', { x: 50, y: 250 }, rect);
+    expect(result).toEqual({ x: 50, y: 100, width: 150, height: 150 });
+  });
+
+  it('never distorts the aspect ratio for circle or square shapes', () => {
+    for (const corner of ['tl', 'tr', 'bl', 'br'] as const) {
+      const result = computeResize(corner, { x: 300, y: 10 }, rect);
+      expect(result.width / result.height).toBeCloseTo(1, 10);
+    }
   });
 });

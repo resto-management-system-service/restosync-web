@@ -3,12 +3,19 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
 import type { Table } from '../api/types';
-import { createTable, updateTable } from '../api/service';
+import { createTable, getNextTableName, updateTable } from '../api/service';
 import AddTableSheet from './add-table-sheet';
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() }
+}));
+
+import { toast } from 'sonner';
 
 vi.mock('../api/service', () => ({
   createTable: vi.fn(),
-  updateTable: vi.fn()
+  updateTable: vi.fn(),
+  getNextTableName: vi.fn()
 }));
 
 const table: Table = {
@@ -27,58 +34,97 @@ const table: Table = {
   updatedAt: '2026-01-01T00:00:00.000Z'
 };
 
+const canvasSize = { width: 1000, height: 1000 };
+
+function renderSheet(props: Partial<Parameters<typeof AddTableSheet>[0]> = {}) {
+  return renderWithProviders(
+    <AddTableSheet
+      open
+      onOpenChange={() => {}}
+      table={null}
+      zoneId='z1'
+      canvasSize={canvasSize}
+      {...props}
+    />
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(getNextTableName).mockResolvedValue('102');
 });
 
-it('rejects an empty name and shows the inline error (create mode)', async () => {
-  const onOpenChange = vi.fn();
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
+it('shows the suggested name as read-only text (not an input) on open', async () => {
+  renderSheet();
 
-  await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
-
-  expect(await screen.findByText(/el nombre es requerido/i)).toBeInTheDocument();
-  expect(createTable).not.toHaveBeenCalled();
+  await waitFor(() => expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('102'));
+  expect(screen.queryByRole('textbox', { name: /nombre/i })).not.toBeInTheDocument();
+  expect(getNextTableName).toHaveBeenCalledWith('z1');
 });
 
-it('accepts a valid submission and creates the table in the zone', async () => {
+it('submits the suggested name unchanged (capacity/shape remain functional)', async () => {
   const onOpenChange = vi.fn();
-  vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: 'T14' } as Table);
+  vi.mocked(createTable).mockResolvedValue({ id: 't-new', name: '102' } as Table);
 
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={null} zoneId='z1' />);
+  renderSheet({ onOpenChange });
 
-  await userEvent.type(screen.getByLabelText(/nombre/i), 'T14');
+  await waitFor(() => expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('102'));
+
+  // Capacity + shape are still editable selects.
+  await userEvent.click(screen.getByLabelText(/capacidad/i));
+  await userEvent.click(await screen.findByRole('option', { name: '6 personas' }));
+
   await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
 
   await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   expect(createTable).toHaveBeenCalledWith({
-    name: 'T14',
-    capacity: 4,
+    name: '102',
+    capacity: 6,
     shape: 'circle',
-    zoneId: 'z1'
+    zoneId: 'z1',
+    canvasSize
   });
 });
 
-it('pre-fills the form in edit mode and hides the shape field', () => {
+it('surfaces the backend duplicate-name message via toast (not a silent failure)', async () => {
   const onOpenChange = vi.fn();
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={table} zoneId='z1' />);
+  vi.mocked(createTable).mockRejectedValue(new Error('Table name "102" already exists'));
 
-  expect(screen.getByLabelText(/nombre/i)).toHaveValue('T1');
+  renderSheet({ onOpenChange });
+
+  await waitFor(() => expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('102'));
+  await userEvent.click(screen.getByRole('button', { name: /agregar/i }));
+
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Table name "102" already exists'));
+  expect(onOpenChange).not.toHaveBeenCalledWith(false);
+});
+
+it('shows the name read-only in edit mode (capacity is the only editable field)', () => {
+  renderSheet({ table });
+
+  expect(screen.getByTestId('table-name-readonly')).toHaveTextContent('T1');
+  expect(screen.queryByRole('textbox', { name: /nombre/i })).not.toBeInTheDocument();
   expect(screen.getByLabelText(/capacidad/i)).toHaveTextContent('6 personas');
   expect(screen.queryByLabelText(/forma/i)).not.toBeInTheDocument();
 });
 
-it('submits an edit by calling updateTable (not createTable) with the correct id/fields', async () => {
+it('submits an edit with the unchanged name (only capacity is sent as editable)', async () => {
   const onOpenChange = vi.fn();
   vi.mocked(updateTable).mockResolvedValue(table);
 
-  renderWithProviders(<AddTableSheet open onOpenChange={onOpenChange} table={table} zoneId='z1' />);
+  renderSheet({ table, onOpenChange });
 
-  await userEvent.clear(screen.getByLabelText(/nombre/i));
-  await userEvent.type(screen.getByLabelText(/nombre/i), 'T1-A');
+  await userEvent.click(screen.getByLabelText(/capacidad/i));
+  await userEvent.click(await screen.findByRole('option', { name: '8 personas' }));
   await userEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
 
   await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
-  expect(updateTable).toHaveBeenCalledWith('t1', { name: 'T1-A', capacity: 6 });
+  expect(updateTable).toHaveBeenCalledWith('t1', { name: 'T1', capacity: 8 });
   expect(createTable).not.toHaveBeenCalled();
+});
+
+it('does not fetch a suggestion in edit mode', () => {
+  renderSheet({ table });
+
+  expect(getNextTableName).not.toHaveBeenCalled();
 });

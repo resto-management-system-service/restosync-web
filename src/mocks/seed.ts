@@ -1,12 +1,16 @@
 import { faker } from '@faker-js/faker';
-import type { Category, MenuItem } from './types';
+import type { Category, MenuItem, InventoryItem } from './types';
 
 // Deterministic so tests and dev see the same data every boot.
 const SEED = 20260828;
 
 const CATEGORY_NAMES = ['Appetizers', 'Mains', 'Desserts', 'Drinks'];
 
-export function makeSeedData(): { categories: Category[]; items: MenuItem[] } {
+export function makeSeedData(): {
+  categories: Category[];
+  items: MenuItem[];
+  inventory: InventoryItem[];
+} {
   faker.seed(SEED);
   const now = new Date('2026-08-01T12:00:00.000Z').toISOString();
 
@@ -40,5 +44,22 @@ export function makeSeedData(): { categories: Category[]; items: MenuItem[] } {
     }
   }
 
-  return { categories, items };
+  // Every other ingredient starts at or below its alert threshold so the
+  // low-stock highlight is visible in dev.
+  const inventory: InventoryItem[] = items.slice(0, 8).map((item, i) => {
+    const lowStockThreshold = faker.number.int({ min: 3, max: 10 });
+    return {
+      id: faker.string.uuid(),
+      name: item.name,
+      unit: i % 3 === 0 ? 'kg' : 'unit',
+      quantityOnHand:
+        i % 2 === 0 ? faker.number.int({ min: 0, max: lowStockThreshold }) : lowStockThreshold + 20,
+      lowStockThreshold,
+      menuItemId: item.id,
+      createdAt: now,
+      updatedAt: now
+    };
+  });
+
+  return { categories, items, inventory };
 }

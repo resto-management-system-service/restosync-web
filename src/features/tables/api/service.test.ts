@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { rectsOverlap } from '../lib/layout';
 
 const api = vi.hoisted(() => ({
   tablesControllerFindAll: vi.fn(),
@@ -9,7 +10,8 @@ const api = vi.hoisted(() => ({
   zonesControllerFindAll: vi.fn(),
   zonesControllerCreate: vi.fn(),
   zonesControllerUpdate: vi.fn(),
-  zonesControllerRemove: vi.fn()
+  zonesControllerRemove: vi.fn(),
+  zonesControllerGetNextTableName: vi.fn()
 }));
 
 vi.mock('@/api-client', () => api);
@@ -19,6 +21,7 @@ import {
   createZone,
   deleteTable,
   deleteZone,
+  getNextTableName,
   getTables,
   getZones,
   updateTable,
@@ -76,7 +79,13 @@ describe('tables service', () => {
     api.tablesControllerCreate.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
     api.tablesControllerUpdateLayout.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
 
-    await createTable({ name: 'T20', capacity: 4, shape: 'circle', zoneId: 'z1' });
+    await createTable({
+      name: 'T20',
+      capacity: 4,
+      shape: 'circle',
+      zoneId: 'z1',
+      canvasSize: { width: 1000, height: 1000 }
+    });
 
     expect(api.tablesControllerCreate).toHaveBeenCalledWith({
       body: { name: 'T20', capacity: 4 }
@@ -92,6 +101,63 @@ describe('tables service', () => {
         height: 0.16
       }
     });
+  });
+
+  it('computes an initially-square size for a non-square canvas (Bug 3)', async () => {
+    api.tablesControllerCreate.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+    api.tablesControllerUpdateLayout.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+
+    // 600x260 canvas: equal percentages would render as a 96x41.6 rectangle.
+    await createTable({
+      name: 'T20',
+      capacity: 4,
+      shape: 'square',
+      zoneId: 'z1',
+      canvasSize: { width: 600, height: 260 }
+    });
+
+    const body = api.tablesControllerUpdateLayout.mock.calls[0][0].body;
+    // width = 0.16 (of 600 = 96px); height = 96/260 ≈ 0.3692 so the table is square.
+    expect(body.width).toBeCloseTo(0.16, 10);
+    expect(body.height).toBeCloseTo((0.16 * 600) / 260, 10);
+    // equal pixel dimensions
+    expect(body.width * 600).toBeCloseTo(body.height * 260, 10);
+  });
+
+  it('places a new table at a different position than an existing table in the same zone', async () => {
+    api.tablesControllerCreate.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+    api.tablesControllerUpdateLayout.mockResolvedValue({ data: { id: 't-new' }, error: undefined });
+    api.tablesControllerFindAll.mockResolvedValue({
+      data: [
+        {
+          id: 't1',
+          zoneId: 'z1',
+          positionX: 0.5,
+          positionY: 0.5,
+          width: 0.16,
+          height: 0.16
+        }
+      ],
+      error: undefined
+    });
+
+    await createTable({
+      name: 'T20',
+      capacity: 4,
+      shape: 'circle',
+      zoneId: 'z1',
+      canvasSize: { width: 1000, height: 1000 }
+    });
+
+    const body = api.tablesControllerUpdateLayout.mock.calls[0][0].body;
+    expect(body.positionX).not.toBe(0.5);
+    expect(body.positionY).not.toBe(0.5);
+    expect(
+      rectsOverlap(
+        { positionX: body.positionX, positionY: body.positionY, width: 0.16, height: 0.16 },
+        { positionX: 0.5, positionY: 0.5, width: 0.16, height: 0.16 }
+      )
+    ).toBe(false);
   });
 
   it('deleteTable calls tablesControllerRemove with path', async () => {
@@ -113,16 +179,29 @@ describe('tables service', () => {
     });
   });
 
-  it('createZone calls zonesControllerCreate with name', async () => {
+  it('createZone calls zonesControllerCreate with name + code', async () => {
     api.zonesControllerCreate.mockResolvedValue({
-      data: { id: 'z-new', name: 'Sótano' },
+      data: { id: 'z-new', name: 'Sótano', code: '2' },
       error: undefined
     });
 
-    const zone = await createZone('Sótano');
+    const zone = await createZone({ name: 'Sótano', code: '2' });
 
-    expect(api.zonesControllerCreate).toHaveBeenCalledWith({ body: { name: 'Sótano' } });
-    expect(zone).toEqual({ id: 'z-new', name: 'Sótano' });
+    expect(api.zonesControllerCreate).toHaveBeenCalledWith({
+      body: { name: 'Sótano', code: '2' }
+    });
+    expect(zone).toEqual({ id: 'z-new', name: 'Sótano', code: '2' });
+  });
+
+  it('createZone surfaces the backend duplicate-code message', async () => {
+    api.zonesControllerCreate.mockResolvedValue({
+      data: undefined,
+      error: { message: 'Zone code "2" already exists', statusCode: 400 }
+    });
+
+    await expect(createZone({ name: 'Piso 2', code: '2' })).rejects.toThrow(
+      'Zone code "2" already exists'
+    );
   });
 
   it('updateZone calls zonesControllerUpdate with path + name', async () => {
@@ -134,6 +213,46 @@ describe('tables service', () => {
       path: { id: 'z1' },
       body: { name: 'Planta Baja' }
     });
+  });
+
+  it('updateZone forwards an optional code', async () => {
+    api.zonesControllerUpdate.mockResolvedValue({ data: { id: 'z1' }, error: undefined });
+
+    await updateZone('z1', { code: 'VIP' });
+
+    expect(api.zonesControllerUpdate).toHaveBeenCalledWith({
+      path: { id: 'z1' },
+      body: { code: 'VIP' }
+    });
+  });
+
+  it('getNextTableName calls zonesControllerGetNextTableName and unwraps suggestedName', async () => {
+    api.zonesControllerGetNextTableName.mockResolvedValue({
+      data: { suggestedName: '102' },
+      error: undefined
+    });
+
+    const name = await getNextTableName('z1');
+
+    expect(api.zonesControllerGetNextTableName).toHaveBeenCalledWith({ path: { id: 'z1' } });
+    expect(name).toBe('102');
+  });
+
+  it('createTable surfaces the backend duplicate-name message', async () => {
+    api.tablesControllerCreate.mockResolvedValue({
+      data: undefined,
+      error: { message: 'Table name "101" already exists', statusCode: 400 }
+    });
+
+    await expect(
+      createTable({
+        name: '101',
+        capacity: 4,
+        shape: 'circle',
+        zoneId: 'z1',
+        canvasSize: { width: 1000, height: 1000 }
+      })
+    ).rejects.toThrow('Table name "101" already exists');
   });
 
   it('deleteZone calls zonesControllerRemove with path', async () => {

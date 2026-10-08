@@ -1,38 +1,134 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { Table } from '../api/types';
+import { computeLabelFontSize } from '../lib/layout';
 import TableShape from './table-shape';
 
-type Handler = (e: { cancelBubble: boolean }) => void;
-const groupHandlers: Record<string, { onClick?: Handler; onTap?: Handler; opacity?: number }> = {};
+type Handler = (e?: { cancelBubble: boolean }) => void;
 
-vi.mock('sonner', () => ({
-  toast: { warning: vi.fn(), success: vi.fn(), error: vi.fn(), info: vi.fn() }
-}));
+interface MockNode {
+  x: () => number;
+  y: () => number;
+  getStage: () => null;
+}
+
+interface DragEvent {
+  target: MockNode;
+  currentTarget?: MockNode;
+  cancelBubble: boolean;
+}
+
+const groupHandlers: Record<
+  string,
+  {
+    id?: string;
+    onMouseDown?: Handler;
+    onClick?: Handler;
+    onTap?: Handler;
+    onDragMove?: Handler;
+    onDragEnd?: (e: DragEvent) => void;
+  }
+> = {};
+
+const textProps: Record<
+  string,
+  {
+    text?: string;
+    fontSize?: number;
+    width?: number;
+    height?: number;
+    align?: string;
+    verticalAlign?: string;
+  }
+> = {};
+
+const shapeIds: string[] = [];
+const shapeListening: Record<string, boolean | undefined> = {};
+const shapeCornerRadius: Record<string, number | undefined> = {};
+const chairPositions: Array<{ x: number; y: number }> = [];
+let chairGroupListening: boolean | undefined;
 
 vi.mock('react-konva', () => ({
   Group: ({
+    id,
     name,
+    x,
+    y,
+    listening,
+    onMouseDown,
     onClick,
     onTap,
-    opacity,
+    onDragMove,
+    onDragEnd,
     children
   }: {
+    id?: string;
     name?: string;
+    x?: number;
+    y?: number;
+    listening?: boolean;
+    onMouseDown?: Handler;
     onClick?: Handler;
     onTap?: Handler;
-    opacity?: number;
+    onDragMove?: Handler;
+    onDragEnd?: (e: DragEvent) => void;
     children?: React.ReactNode;
   }) => {
-    if (name) groupHandlers[name] = { onClick, onTap, opacity };
+    if (name === 'table-body') {
+      groupHandlers[name] = { id, onMouseDown, onClick, onTap, onDragMove, onDragEnd };
+    }
+    if (name === 'table-chair') {
+      chairPositions.push({ x: x ?? 0, y: y ?? 0 });
+      chairGroupListening = listening;
+    }
     return <div data-testid={name}>{children}</div>;
   },
-  Circle: () => <div />,
-  Rect: () => <div />,
-  Text: () => <div />
+  Circle: ({ id, radius, listening }: { id?: string; radius?: number; listening?: boolean }) => {
+    if (id) {
+      shapeIds.push(id);
+      shapeListening[id] = listening;
+    }
+    return <div data-radius={radius} />;
+  },
+  Rect: ({
+    id,
+    width,
+    height,
+    cornerRadius,
+    listening
+  }: {
+    id?: string;
+    width?: number;
+    height?: number;
+    cornerRadius?: number;
+    listening?: boolean;
+  }) => {
+    if (id) {
+      shapeIds.push(id);
+      shapeListening[id] = listening;
+      shapeCornerRadius[id] = cornerRadius;
+    }
+    return <div data-width={width} data-height={height} />;
+  },
+  Text: ({
+    text,
+    fontSize,
+    width,
+    height,
+    align,
+    verticalAlign
+  }: {
+    text?: string;
+    fontSize?: number;
+    width?: number;
+    height?: number;
+    align?: string;
+    verticalAlign?: string;
+  }) => {
+    if (text) textProps[text] = { text, fontSize, width, height, align, verticalAlign };
+    return <div />;
+  }
 }));
-
-import { toast } from 'sonner';
 
 const table: Table = {
   id: 't1',
@@ -50,8 +146,6 @@ const table: Table = {
   updatedAt: '2026-01-01T00:00:00.000Z'
 };
 
-const BLOCKED_MESSAGE = 'No se puede editar o eliminar una mesa reservada u ocupada';
-
 function renderShape(props: Partial<Parameters<typeof TableShape>[0]> = {}) {
   return render(
     <TableShape
@@ -62,101 +156,160 @@ function renderShape(props: Partial<Parameters<typeof TableShape>[0]> = {}) {
       height={100}
       editing
       onDragEnd={() => {}}
-      onResize={() => {}}
-      onResizeEnd={() => {}}
       onSelect={() => {}}
-      onEditRequest={() => {}}
-      onDeleteRequest={() => {}}
       {...props}
     />
   );
 }
 
+const node = (x: number, y: number): MockNode => ({ x: () => x, y: () => y, getStage: () => null });
+
 beforeEach(() => {
   vi.clearAllMocks();
   Object.keys(groupHandlers).forEach((key) => delete groupHandlers[key]);
+  Object.keys(textProps).forEach((key) => delete textProps[key]);
+  Object.keys(shapeListening).forEach((key) => delete shapeListening[key]);
+  Object.keys(shapeCornerRadius).forEach((key) => delete shapeCornerRadius[key]);
+  shapeIds.length = 0;
+  chairPositions.length = 0;
+  chairGroupListening = undefined;
 });
 
-it('calls onEditRequest when clicking the body in edit mode', () => {
-  const onEditRequest = vi.fn();
-  const onSelect = vi.fn();
-  renderShape({ onEditRequest, onSelect });
-
-  groupHandlers['table-body'].onClick?.({ cancelBubble: false });
-
-  expect(onEditRequest).toHaveBeenCalledWith(table);
-  expect(onSelect).not.toHaveBeenCalled();
+it('gives the body group an id so the canvas can find it', () => {
+  renderShape();
+  expect(groupHandlers['table-body'].id).toBe('table-t1');
 });
 
-it('calls onSelect (not onEditRequest) when clicking the body in view mode', () => {
-  const onEditRequest = vi.fn();
-  const onSelect = vi.fn();
-  renderShape({ editing: false, onEditRequest, onSelect });
+it('gives the rim shape its own id (used for transform-aware selection/resize)', () => {
+  renderShape();
+  expect(shapeIds).toContain('table-rim-t1');
+});
 
-  groupHandlers['table-body'].onClick?.({ cancelBubble: false });
+it('keeps the table body hit-testable (rim shape must be listening)', () => {
+  renderShape();
+  // Konva Groups have no hit region of their own — they rely on a listening
+  // descendant shape. If the rim becomes `listening={false}`, clicks/drags fall
+  // through to the Stage and pan the canvas instead of selecting/moving the table.
+  expect(shapeListening['table-rim-t1']).not.toBe(false);
+});
+
+it('keeps the square rim listening too', () => {
+  renderShape({ table: { ...table, shape: 'square' } });
+  expect(shapeListening['table-rim-t1']).not.toBe(false);
+});
+
+it('renders a rounded table with rounded corners on the rim', () => {
+  renderShape({ table: { ...table, shape: 'rounded' } });
+  expect(shapeCornerRadius['table-rim-t1']).toBe(8);
+});
+
+it('renders a square table with sharp corners on the rim', () => {
+  renderShape({ table: { ...table, shape: 'square' } });
+  expect(shapeCornerRadius['table-rim-t1']).toBe(0);
+});
+
+it('keeps chairs non-interactive (their group stays listening=false)', () => {
+  renderShape({ table: { ...table, capacity: 4 } });
+  expect(chairGroupListening).toBe(false);
+});
+
+it('calls onSelect when clicking the body in edit mode (selection, not edit sheet)', () => {
+  const onSelect = vi.fn();
+  renderShape({ onSelect });
+
+  groupHandlers['table-body'].onClick?.();
 
   expect(onSelect).toHaveBeenCalledWith(table);
-  expect(onEditRequest).not.toHaveBeenCalled();
 });
 
-it('clicking the delete button calls onDeleteRequest and does not bubble to edit', () => {
-  const onDeleteRequest = vi.fn();
-  const onEditRequest = vi.fn();
-  renderShape({ onDeleteRequest, onEditRequest });
+it('selects on mousedown in edit mode so click-and-drag also selects', () => {
+  const onSelect = vi.fn();
+  renderShape({ onSelect });
 
-  const event = { cancelBubble: false };
-  groupHandlers['table-delete'].onClick?.(event);
+  groupHandlers['table-body'].onMouseDown?.();
 
-  expect(onDeleteRequest).toHaveBeenCalledWith(table);
-  expect(event.cancelBubble).toBe(true);
-  expect(onEditRequest).not.toHaveBeenCalled();
+  expect(onSelect).toHaveBeenCalledWith(table);
 });
 
-it('clicking the edit icon calls onEditRequest with the correct table', () => {
-  const onEditRequest = vi.fn();
-  renderShape({ onEditRequest });
+it('does not select on mousedown in view mode (click/tap only)', () => {
+  const onSelect = vi.fn();
+  renderShape({ editing: false, onSelect });
 
-  const event = { cancelBubble: false };
-  groupHandlers['table-edit'].onClick?.(event);
+  groupHandlers['table-body'].onMouseDown?.();
+  expect(onSelect).not.toHaveBeenCalled();
 
-  expect(event.cancelBubble).toBe(true);
-  expect(onEditRequest).toHaveBeenCalledWith(table);
+  groupHandlers['table-body'].onClick?.();
+  expect(onSelect).toHaveBeenCalledWith(table);
 });
 
-it('clicking the resize handle stops propagation without triggering edit', () => {
-  const onEditRequest = vi.fn();
-  renderShape({ onEditRequest });
+it('dragging the body persists the new position via onDragEnd', () => {
+  const onDragEnd = vi.fn();
+  renderShape({ onDragEnd });
 
-  const event = { cancelBubble: false };
-  groupHandlers['table-resize'].onClick?.(event);
-
-  expect(event.cancelBubble).toBe(true);
-  expect(onEditRequest).not.toHaveBeenCalled();
-});
-
-it('renders edit/delete disabled (reduced opacity) for a non-available table', () => {
-  renderShape({ table: { ...table, status: 'RESERVED' } });
-
-  expect(groupHandlers['table-edit'].opacity).toBeLessThan(1);
-  expect(groupHandlers['table-delete'].opacity).toBeLessThan(1);
-  // resize remains enabled regardless of status
-  expect(groupHandlers['table-resize'].opacity).toBeUndefined();
-});
-
-it('shows a toast (no API call) when clicking edit/delete on a non-available table', () => {
-  const onEditRequest = vi.fn();
-  const onDeleteRequest = vi.fn();
-  renderShape({
-    table: { ...table, status: 'OCCUPIED' },
-    onEditRequest,
-    onDeleteRequest
+  const body = node(120, 90);
+  groupHandlers['table-body'].onDragEnd?.({
+    target: body,
+    currentTarget: body,
+    cancelBubble: false
   });
 
-  groupHandlers['table-edit'].onClick?.({ cancelBubble: false });
-  expect(toast.warning).toHaveBeenCalledWith(BLOCKED_MESSAGE);
-  expect(onEditRequest).not.toHaveBeenCalled();
+  expect(onDragEnd).toHaveBeenCalledWith('t1', 120, 90);
+});
 
-  groupHandlers['table-delete'].onClick?.({ cancelBubble: false });
-  expect(toast.warning).toHaveBeenCalledWith(BLOCKED_MESSAGE);
-  expect(onDeleteRequest).not.toHaveBeenCalled();
+it('fires onDragMove on body drag so the selection overlay can re-sync', () => {
+  const onDragMove = vi.fn();
+  renderShape({ onDragMove });
+
+  groupHandlers['table-body'].onDragMove?.();
+
+  expect(onDragMove).toHaveBeenCalledWith('t1');
+});
+
+it('renders one chair per capacity for a circle table', () => {
+  renderShape({ table: { ...table, shape: 'circle', capacity: 6 } });
+  expect(chairPositions).toHaveLength(6);
+});
+
+it('renders chairs matching square capacity (not capped at 4)', () => {
+  renderShape({ table: { ...table, shape: 'square', capacity: 8 } });
+  expect(chairPositions).toHaveLength(8);
+});
+
+it('keeps the label centered and scales its font with the shape size', () => {
+  renderShape({ width: 200, height: 200 });
+
+  const label = textProps['T1'];
+  expect(label).toBeDefined();
+  expect(label.align).toBe('center');
+  expect(label.verticalAlign).toBe('middle');
+  expect(label.width).toBe(200);
+  expect(label.height).toBe(200);
+  expect(label.fontSize).toBe(computeLabelFontSize(200, 200, 'T1'));
+});
+
+it('updates label geometry and chair positions together on resize (no desync)', () => {
+  const { rerender } = renderShape({ width: 100, height: 100 });
+  expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(100, 100, 'T1'));
+  expect(chairPositions).toHaveLength(4);
+  const firstChair = chairPositions[0];
+
+  rerender(
+    <TableShape
+      table={table}
+      x={0}
+      y={0}
+      width={300}
+      height={300}
+      editing
+      onDragEnd={() => {}}
+      onSelect={() => {}}
+    />
+  );
+
+  expect(textProps['T1'].fontSize).toBe(computeLabelFontSize(300, 300, 'T1'));
+  expect(textProps['T1'].width).toBe(300);
+  expect(textProps['T1'].height).toBe(300);
+  // The circle chair ring re-derives from the new size (4 more chairs pushed).
+  expect(chairPositions).toHaveLength(8);
+  expect(chairPositions[4]).not.toEqual(firstChair);
 });

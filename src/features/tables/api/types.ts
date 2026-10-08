@@ -44,6 +44,8 @@ export interface Zone {
   id: string;
   restaurantId: string;
   name: string;
+  /** Short alphanumeric code used as a table-name prefix (e.g. "1", "T", "VIP"). */
+  code: string;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +57,8 @@ export interface CreateTableInput {
   capacity: number;
   shape: TableShape;
   zoneId: string;
+  /** Canvas pixel dimensions, used to compute an initially-square default size. */
+  canvasSize: { width: number; height: number };
 }
 
 /** Fields editable via PATCH /tables/:id (name + capacity only; shape is layout-only). */
@@ -63,7 +67,14 @@ export interface UpdateTableInput {
   capacity: number;
 }
 
-/** Fields editable via PATCH /zones/:id (name only in this UI). */
-export interface UpdateZoneInput {
+/** Input required to create a zone. */
+export interface CreateZoneInput {
   name: string;
+  code: string;
+}
+
+/** Fields editable via PATCH /zones/:id. */
+export interface UpdateZoneInput {
+  name?: string;
+  code?: string;
 }

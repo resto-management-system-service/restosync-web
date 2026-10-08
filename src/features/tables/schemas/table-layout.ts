@@ -15,12 +15,17 @@ export const tableLayoutFormDefaults: TableLayoutFormValues = {
   shape: 'circle'
 };
 
-export function toCreateTableInput(v: TableLayoutFormValues, zoneId: string): CreateTableInput {
+export function toCreateTableInput(
+  v: TableLayoutFormValues,
+  zoneId: string,
+  canvasSize: { width: number; height: number }
+): CreateTableInput {
   return {
     name: v.name,
     capacity: Number(v.capacity),
     shape: v.shape as TableShape,
-    zoneId
+    zoneId,
+    canvasSize
   };
 }
 

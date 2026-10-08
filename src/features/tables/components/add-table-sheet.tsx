@@ -1,8 +1,11 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Sheet,
   SheetContent,
@@ -11,9 +14,12 @@ import {
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet';
-import * as z from 'zod';
 import type { Table } from '../api/types';
-import { createTableMutation, updateTableMutation } from '../api/tables.queries';
+import {
+  createTableMutation,
+  nextTableNameQueryOptions,
+  updateTableMutation
+} from '../api/tables.queries';
 import {
   tableLayoutFormDefaults,
   tableLayoutFormSchema,
@@ -41,9 +47,17 @@ interface AddTableSheetProps {
   /** null → create a new table; a Table → edit that table's name/capacity. */
   table: Table | null;
   zoneId: string;
+  /** Canvas pixel dimensions, used to compute an initially-square default size. */
+  canvasSize: { width: number; height: number };
 }
 
-export default function AddTableSheet({ open, onOpenChange, table, zoneId }: AddTableSheetProps) {
+export default function AddTableSheet({
+  open,
+  onOpenChange,
+  table,
+  zoneId,
+  canvasSize
+}: AddTableSheetProps) {
   const isEdit = table !== null;
 
   const defaultValues: TableLayoutFormValues = isEdit
@@ -59,14 +73,16 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
     onSuccess: () => {
       form.reset();
       onOpenChange(false);
-    }
+    },
+    onError: (error) => toast.error(error.message)
   });
 
   const updateMutation = useMutation({
     ...updateTableMutation,
     onSuccess: () => {
       onOpenChange(false);
-    }
+    },
+    onError: (error) => toast.error(error.message)
   });
 
   const form = useAppForm({
@@ -76,14 +92,36 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
       if (isEdit && table) {
         updateMutation.mutate({ id: table.id, input: toUpdateTableInput(value) });
       } else {
-        createMutation.mutate(toCreateTableInput(value, zoneId));
+        createMutation.mutate(toCreateTableInput(value, zoneId, canvasSize));
       }
     }
   });
 
-  const { FormTextField, FormSelectField } = useFormFields<TableLayoutFormValues>();
+  // Fetch a suggested name on-demand when the create sheet opens. gcTime: 0 +
+  // staleTime: 0 means the suggestion is freshly computed each time it opens.
+  const nextNameQuery = useQuery({
+    ...nextTableNameQueryOptions(zoneId),
+    enabled: open && !isEdit && !!zoneId
+  });
+
+  // Start from a clean form each time the create sheet opens.
+  useEffect(() => {
+    if (open && !isEdit) form.reset();
+  }, [open, isEdit, form]);
+
+  // Pre-fill the suggested name once it arrives (still fully editable).
+  useEffect(() => {
+    if (open && !isEdit && nextNameQuery.data) {
+      form.setFieldValue('name', nextNameQuery.data);
+    }
+  }, [open, isEdit, nextNameQuery.data, form]);
+
+  const { FormSelectField } = useFormFields<TableLayoutFormValues>();
 
   const isPending = isEdit ? updateMutation.isPending : createMutation.isPending;
+
+  // The table name is always server-assigned — shown read-only, never editable.
+  const displayName = isEdit ? table.name : (nextNameQuery.data ?? '');
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -92,20 +130,23 @@ export default function AddTableSheet({ open, onOpenChange, table, zoneId }: Add
           <SheetTitle>{isEdit ? 'Editar mesa' : 'Agregar mesa'}</SheetTitle>
           <SheetDescription>
             {isEdit
-              ? 'Actualiza el nombre y la capacidad de la mesa.'
+              ? 'Actualiza la capacidad de la mesa.'
               : 'Configura la nueva mesa de esta zona.'}
           </SheetDescription>
         </SheetHeader>
 
         <form.AppForm>
           <form.Form id='add-table-form' className='space-y-4 p-0 md:p-0'>
-            <FormTextField
-              name='name'
-              label='Nombre'
-              required
-              placeholder='e.g. T14'
-              validators={{ onBlur: z.string().min(1, 'El nombre es requerido.') }}
-            />
+            <div className='space-y-1.5'>
+              <Label>Nombre</Label>
+              <div
+                data-testid='table-name-readonly'
+                className='flex h-9 w-full items-center justify-center rounded-md border border-input bg-muted px-3 text-sm font-medium text-muted-foreground'
+              >
+                {displayName}
+              </div>
+              <p className='text-xs text-muted-foreground'>Asignado automáticamente.</p>
+            </div>
             <FormSelectField name='capacity' label='Capacidad' required options={capacityOptions} />
             {!isEdit && (
               <FormSelectField name='shape' label='Forma' required options={shapeOptions} />
