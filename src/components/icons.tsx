@@ -78,6 +78,8 @@ import {
   IconTrash,
   IconTrendingDown,
   IconTrendingUp,
+  IconDownload,
+  IconChartBar,
   IconTypography,
   IconUnderline,
   IconUpload,
@@ -199,6 +201,8 @@ export const Icons = {
   // Data / Charts
   trendingDown: IconTrendingDown,
   trendingUp: IconTrendingUp,
+  download: IconDownload,
+  reports: IconChartBar,
   eyeOff: IconEyeOff,
   adjustments: IconAdjustmentsHorizontal,
 
