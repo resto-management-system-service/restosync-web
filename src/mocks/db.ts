@@ -1,15 +1,21 @@
 import { makeSeedData } from './seed';
-import type { Category, MenuItem } from './types';
+import type { Category, MenuItem, InventoryItem } from './types';
 
-export const db: { categories: Category[]; items: MenuItem[] } = {
+export const db: {
+  categories: Category[];
+  items: MenuItem[];
+  inventory: InventoryItem[];
+} = {
   categories: [],
-  items: []
+  items: [],
+  inventory: []
 };
 
 export function resetDb(): void {
   const seed = makeSeedData();
   db.categories = seed.categories;
   db.items = seed.items;
+  db.inventory = seed.inventory;
 }
 
 // Seed on first import.

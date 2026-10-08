@@ -7,7 +7,7 @@ Bootstrapped from the [`next-shadcn-dashboard-starter`](https://github.com/Kiran
 ## Stack
 
 | Area      | Tech                                             |
-| --------- | -------------------------------------------------- |
+| --------- | ------------------------------------------------ |
 | Framework | Next.js 16 (App Router) · React 19 · TypeScript  |
 | Styling   | Tailwind CSS v4 · shadcn/ui (Radix)              |
 | Auth      | Clerk (`@clerk/nextjs`) — orgs, RBAC, billing    |
@@ -36,14 +36,14 @@ PORT=3001 pnpm dev              # http://localhost:3001
 
 ### Environment variables (`.env.local`)
 
-| Variable                                                 | Purpose                                                                                                                                                                                                  |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | Clerk keys. **Leave empty to use Clerk keyless mode** — the app boots immediately and a popup lets you claim it later. For real keys, create an app at [dashboard.clerk.com](https://dashboard.clerk.com). |
-| `NEXT_PUBLIC_CLERK_*_URL`                                | Sign-in / sign-up / post-auth redirect routes.                                                                                                                                                           |
-| `NEXT_PUBLIC_DISABLE_AUTH`                               | `true` → skip the Clerk login gate entirely; the app renders with a mock user. Local only.                                                                                                               |
-| `NEXT_PUBLIC_SENTRY_DISABLED`                            | Any non-empty value disables Sentry. Kept `true` locally. To enable Sentry, clear it and set `NEXT_PUBLIC_SENTRY_DSN` / `_ORG` / `_PROJECT`.                                                             |
-| `NEXT_PUBLIC_API_URL`                                    | Base URL the generated API client targets. Defaults to `http://localhost:3000/api`. Also used to derive the real-time WebSocket connection (same origin, `/api` prefix stripped). See [API client](#api-client-generated). |
-| `NEXT_PUBLIC_ENABLE_MSW`                                 | `true` → serve the in-browser MSW mock API instead of `NEXT_PUBLIC_API_URL`. Default off.                                                                                                                 |
+| Variable                                                 | Purpose                                                                                                                                                                                                                                     |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | Clerk keys. **Leave empty to use Clerk keyless mode** — the app boots immediately and a popup lets you claim it later. For real keys, create an app at [dashboard.clerk.com](https://dashboard.clerk.com).                                  |
+| `NEXT_PUBLIC_CLERK_*_URL`                                | Sign-in / sign-up / post-auth redirect routes.                                                                                                                                                                                              |
+| `NEXT_PUBLIC_DISABLE_AUTH`                               | `true` → skip the Clerk login gate entirely; the app renders with a mock user. Local only.                                                                                                                                                  |
+| `NEXT_PUBLIC_SENTRY_DISABLED`                            | Any non-empty value disables Sentry. Kept `true` locally. To enable Sentry, clear it and set `NEXT_PUBLIC_SENTRY_DSN` / `_ORG` / `_PROJECT`.                                                                                                |
+| `NEXT_PUBLIC_API_URL`                                    | Base URL the generated API client targets. Defaults to `http://localhost:3000/api`. Also used to derive the real-time WebSocket connection (same origin, `/api` prefix stripped). See [API client](#api-client-generated).                  |
+| `NEXT_PUBLIC_ENABLE_MSW`                                 | `true` → serve the in-browser MSW mock API instead of `NEXT_PUBLIC_API_URL`. Default off.                                                                                                                                                   |
 | `NEXT_PUBLIC_DEV_API_LOGIN`                              | `true` → auto-login to the API with seeded creds (`admin@restosync.local` / `Admin123!`) and attach a bearer token to every REST **and WebSocket** request (needed for writes and for the real-time table-status connection). **Dev only.** |
 
 ## Scripts
